@@ -1,0 +1,11 @@
+<span><%= link "Edit Name", to: picture_path(@conn, :edit, @picture) %></span>
+<span><%= link "Back", to: picture_path(@conn, :index) %></span>
+<h2>Picture: <%= @picture.name %></h2>
+
+<script>
+  window.picture_id = <%= @picture.id %>;
+</script>
+
+<div id="root">
+  <p>Pic loading...</p>
+</div>

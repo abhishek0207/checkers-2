@@ -1,0 +1,67 @@
+/* This file is for your main application css. */
+
+@import "bootstrap";
+
+
+.tile{
+    padding:10px;
+    margin:10px;
+    border:1px solid black;
+    display: inline;
+
+}
+.col-8 {
+    width: 75%;
+}
+
+.board{
+    display:flex;
+    flex-direction:column;
+    height:90vh;
+    align-items:center;
+    width:90vw;
+  }
+  
+  .checker_row{
+    display:flex;
+    flex-wrap: nowrap;
+    flex-direction:row;
+    flex-shrink:0;
+    justify-content:center;
+  }
+  .checker_cell{
+     flex-basis:4rem;
+     height:4rem;
+     flex-shrink:0;
+     color: red;
+     background:#F0D2B4 ;
+  }
+  .checker_cell.odd:nth-of-type(2n),.checker_cell.even:nth-of-type(2n+1)
+  {
+      background:#BA7A3A;
+  }
+  
+  .black-square
+  {
+      background-color:black;
+
+  }
+  .RedCheckers {
+      background:red;
+  }
+  .BlackCheckers {
+    background:black;
+}
+  .circle {
+      border-radius: 50%;
+      width:40px;
+      height:40px;
+      vertical-align: middle;
+      left:25%;
+      top:10pxa;
+      display:table-cell;
+      position:relative;
+  }
+  .highlight{
+      border:3px solid green;
+  }

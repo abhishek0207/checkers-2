@@ -1,0 +1,18 @@
+<!--<div id="game">
+  Loading...
+</div>-->
+<script>
+function clicked() {
+  let input_value = document.getElementById("game-input").value
+  window.location.href= "/game/" + input_value
+  return false
+}
+</script>
+<div class="row">
+  <div class="col">
+    <h1 id="index-page">Join a Game</h1>
+    <p><input type="text" id="game-input"></p>
+    <p><button id="game-button" onclick="clicked()">Join Game</button></p>
+    <p id="game-output"></p>
+  </div>
+</div>
