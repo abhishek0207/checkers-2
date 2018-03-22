@@ -4,25 +4,32 @@ defmodule CheckersWeb.Game.Piece do
 
     defstruct [
         color: "",
-        boardPosition: :none,
         nextMoves: [],
-        isKing: false
+        isKing: false,
+        position: :none
     ]
     
     def start_link() do
         Agent.start_link(fn-> %Piece{} end)
     end
-
+    def get_state(pid) do
+        Agent.get(pid, fn state -> state end)
+    end
     def getPosition(pid) do
-        Agent.get(pid, fn state -> state.boardPosition end)
+        Agent.get(pid, fn state -> state.position end)
     end
 
     def setPosition(pid, squarePid) do
-        Agent.get(pid, fn state -> Map.put(state, :position, squarePid ) end)
-    end
+        IO.puts("entered set position")
+        Agent.update(pid, fn state -> Map.put(state, :position, squarePid) end)
+    end 
 
     def getNextMoves(pid) do
         Agent.get(pid, fn state -> state.nextMoves end)
+    end
+
+    def getColor(pid) do
+        Agent.get(pid, fn state -> state.color end)
     end
 
     def king?(pid) do
@@ -31,10 +38,15 @@ defmodule CheckersWeb.Game.Piece do
 
     def addtoSquare(pid, squarePid) do
         Square.setPiecePid(squarePid, pid)
+        Square.setChecker(squarePid, true)
         setPosition(pid, squarePid)
     end
-    #def setColor(pid, color)  do
-     #   Agent.update(pid, fn state -> Map.put(state, :color, color) end)
-    #end
+
+    def setColor(pid, color)  do 
+        Agent.update(pid, fn state -> Map.put(state, :color, color) end)
+    end
+    def toString(pid) do
+        " color => #{getColor(pid)}"
+    end
    
 end

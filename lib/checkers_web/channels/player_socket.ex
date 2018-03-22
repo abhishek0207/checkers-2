@@ -20,8 +20,8 @@ defmodule CheckersWeb.PlayerSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(%{"id" => player_id}, socket) do
-    {:ok, assign(socket, :player_id, player_id)}
+  def connect(params, socket) do
+    {:ok, socket}
   end
 
   def connect(_, _socket), do: :error
@@ -36,5 +36,5 @@ defmodule CheckersWeb.PlayerSocket do
   #     CheckersWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
-  def id(socket), do: "players_socket:#{socket.assigns.player_id}"
+  def id(_socket), do: nil
 end

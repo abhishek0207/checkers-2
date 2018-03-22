@@ -12,7 +12,7 @@
 // If you no longer want to use a dependency, remember
 // to also remove its path from "config.paths.watched".
 import "phoenix_html"
-import app_start from "./mainApp"
+import game_start from "./game"
 
 // Import local files
 //
@@ -21,17 +21,17 @@ import app_start from "./mainApp"
 
 import socket from "./socket"
 function init() {
-    let root = document.getElementById('root');
+    let root = document.getElementById('game');
     if(root) {
-      console.log("entered")
-      let channel = socket.channel("lobby:someRoom", {})
-      app_start(root, channel)
+      
+      let urlParams = new URLSearchParams(window.location.search)
+      let playerName = urlParams.get('playerName')
+      console.log(playerName)
+      let data = { player: playerName}
+      let channel = socket.channel("game:" + window.gameState, data);
+      game_start(root, channel, playerName)
     }
     
   }
-  
-  
-  
-  
   // Use jQuery to delay until page loaded.
   $(init);

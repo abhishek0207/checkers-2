@@ -1,6 +1,6 @@
 defmodule CheckersWeb.Game.Square do
     alias CheckersWeb.Game.Square
-
+    alias CheckersWeb.Game.Piece
     defstruct [
         checker?: false,
         piecePid: :none
@@ -11,14 +11,21 @@ defmodule CheckersWeb.Game.Square do
     def hasChecker?(pid) do
         Agent.get(pid, fn state -> state.checker? end)
     end
-    def setChecker(pid) do
-        Agent.update(pid, fn state -> Map.put(state, :checker?, true) end)
+    def setChecker(pid, value) do
+        Agent.update(pid, fn state -> Map.put(state, :checker?, value) end)
     end
     def setPiecePid(pid, piecePid) do
+        IO.puts("enterd in set piece pid")
+        Piece.setPosition(piecePid, pid)
         Agent.update(pid, fn state -> Map.put(state, :piecePid, piecePid) end)
+        Agent.update(pid, fn state -> Map.put(state, :checker?, true) end)
     end
     def getPiecePid(pid) do
-        Agent.update(pid, fn state -> state.piecePid end)
+        Agent.get(pid, fn state -> state.piecePid end)
+    end
+    def removePiece(pid) do
+        Agent.update(pid, fn state -> Map.put(state, :piecePid, :none) end)
+        Agent.update(pid, fn state -> Map.put(state, :checker?, false) end)
     end
     def toString(pid) do
         "%{hasChecker => #{hasChecker?(pid)} } "

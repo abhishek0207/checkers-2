@@ -4,15 +4,31 @@
 <script>
 function clicked() {
   let input_value = document.getElementById("game-input").value
-  window.location.href= "/game/" + input_value
+  let name = document.getElementById("name-input").value
+  window.location.href= "/game/" + input_value + "?playerName=" + name
+  return false
+}
+
+function alreadyClicked() {
+  let input_value = document.getElementById("game-input-joined").value
+  let name = document.getElementById("name-input-joined").value
+  window.location.href= "/game/" + input_value + "?playerName=" + name + "&joined=true"
   return false
 }
 </script>
 <div class="row">
   <div class="col">
-    <h1 id="index-page">Join a Game</h1>
-    <p><input type="text" id="game-input"></p>
+    <h1 id="index-page">Create a New Game</h1>
+    <p>GameName: <input type="text" id="game-input"></p>
+    <p>Name: <input type="text" id="name-input"></p>
     <p><button id="game-button" onclick="clicked()">Join Game</button></p>
+    <p id="game-output"></p>
+  </div>
+   <div class="col">
+    <h1 id="index-page">Join an Existing Game</h1>
+    <p>GameName: <input type="text" id="game-input-joined"></p>
+    <p>Name: <input type="text" id="name-input-joined"></p>
+    <p><button id="game-button" onclick="alreadyClicked()">Join Game</button></p>
     <p id="game-output"></p>
   </div>
 </div>

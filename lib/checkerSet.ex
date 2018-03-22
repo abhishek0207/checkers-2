@@ -2,20 +2,23 @@ defmodule CheckersWeb.Game.CheckersSet do
     alias CheckersWeb.Game.CheckersSet
     alias CheckersWeb.Game.Piece
     defstruct [
-        red: :none,
-        black: :none
+        red: [],
+        black: []
     ]
     def start_link() do
-        Agent.start_link(fn -> initializeSet() end)
-    end
-    def initializeSet() do
-        Enum.reduce(keys(), %CheckersSet{}, fn key, set ->
-        {:ok, island} = Piece.start_link
-        Map.put(set, key, island)
-            end)
+        Agent.start_link(fn -> %CheckersSet{} end)
     end
     
-    def keys() do
-       %CheckersSet{} |> Map.from_struct |> Map.keys
+    def addRedPid(pid, redList) do
+        Agent.update(pid, fn state -> Map.put(state, :red, redList) end )
+    end
+    def getRedPid(pid) do
+        Agent.get(pid, fn state -> state.red end )
+    end
+    def getBlackPid(pid) do
+        Agent.get(pid, fn state -> state.black end )
+    end
+    def addBlackPid(pid, blackList) do
+        Agent.update(pid, fn state -> Map.put(state, :Black, blackList) end)
     end
 end

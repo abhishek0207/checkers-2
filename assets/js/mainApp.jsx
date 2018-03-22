@@ -2,37 +2,75 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {Board,CheckerRow, CheckerCell, RedCheckers, BlackCheckers} from './components';
 
-export default function app_start(root, channel) {
-    ReactDOM.render(<MainApp channel = {channel} />, root)
-}
-const exinitialState = {
-    allPositions:[],
-    blackPositions:[],
-    currentChecker: {
-    checkerColor:"",
-    possiblemoves:[],
-    selectedchecker:0
-    },
-    next : "",
-    redPositions:[]
-  }
-  
-class MainApp extends React.Component {
+export class MainApp extends React.Component {
     constructor(props) {
         super(props)
-        this.channel =this.props.channel;
-        this.state = exinitialState
+        this.channel =this.props.channel
         this.onBlackClick = this.onBlackClick.bind(this)
         this.onRedClick = this.onRedClick.bind(this)
-        this.legalMove = this.legalMove.bind(this)
-        this.channel.join()
-              .receive("ok" , this.gotView.bind(this) )
-              .receive("error", resp => { console.log("Unable to join", resp) })
-
+        this.legalMove = this.legalMove.bind(this)   
+        this.state =  {
+            allPositions:[],
+            blackPositions:[],
+            currentChecker: {
+            checkerColor:"",
+            possiblemoves:[],
+            selectedchecker:0
+            },
+            next : "",
+            message: "one Player playing",
+            redPositions: [],
+            channel: this.props.channel,
+            player: this.props.player
+          }
+        
 }
+
+componentDidMount() {
+    this.state.channel.on("player_added", response => {
+        this.processPlayerAdded()
+      })
+      this.state.channel.on("player1_added", response => {
+          console.log(response.message)
+          console.log(response.message.red)
+        this.setState({redPositions: response.message.red,
+        allPositions: response.message.all })
+      })
+      this.state.channel.on("player2_added", response => {
+        console.log(response.message)
+        console.log(response.message.black)
+      this.setState({blackPositions: response.message.black,
+                    redPositions: response.message.red,
+                    allPositions: response.message.all})
+    })
+
+    this.state.channel.on("moved_Red", response => {
+        console.log("enterede moved Red")
+            this.setState({blackPositions: response.message.black,
+            redPositions: response.message.red,
+            allPositions: response.message.all,
+        next:"black",
+    message: "player 1 has played"})
+    })
+
+    this.state.channel.on("moved_black", response => {
+        console.log("enterede moved black")
+        console.log(response.message.black)
+            this.setState({blackPositions: response.message.black,
+            redPositions: response.message.red,
+            allPositions: response.message.all,
+        next:"red",
+    message: "player 2 has played"})
+    })
+}
+
 gotView(view) {
     console.log("entered inside")
     this.setState(view.curState)
+}
+processPlayerAdded() {
+    this.setState({message: "Both players present.",
+                    next: "red"});
 }
 onBlackClick(pos, king, next){
     let currentselectedChecker = this.state.currentChecker;
@@ -44,6 +82,7 @@ onBlackClick(pos, king, next){
     })
 }
 
+
 legalMove(column_position){
     let selected = this.state.currentChecker
     let redArray = this.state.redPositions
@@ -54,8 +93,8 @@ legalMove(column_position){
             
             if(selected.checkerColor == "red") {
                 if(this.state.next=="red") {
-                this.channel.push("moveRed", {state:this.state, column_position: column_position })
-                    .receive("ok", this.gotView.bind(this))
+                this.state.channel.push("moveRed", {curPosition: selected.selectedchecker, column_position: column_position, player: this.state.player})
+                    .receive("ok", response => {console.log("moved")})
             }
             else{
                 alert("this is not your turn")
@@ -64,8 +103,8 @@ legalMove(column_position){
             }
             else if(selected.checkerColor == "black") {
                 if(this.state.next=="black"){
-                    this.channel.push("moveBlack", {state:this.state, column_position: column_position })
-                    .receive("ok", this.gotView.bind(this))
+                    this.state.channel.push("moveBlack", {curPosition: selected.selectedchecker, column_position: column_position, player: this.state.player})
+                    .receive("ok", response => {console.log("black moved")})
                }
                 else{
                     alert("this is not your turn")

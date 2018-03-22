@@ -12,9 +12,12 @@ defmodule Checkers.Application do
       supervisor(Checkers.Repo, []),
       # Start the endpoint when the application starts
       supervisor(CheckersWeb.Endpoint, []),
-      supervisor(CheckersWeb.Game.Supervisor, []),
+      supervisor(CheckersWeb.Game.Presence, []),
+      {Registry, keys: :unique, name: Registry.Game},
+      supervisor(CheckersWeb.Game.Supervisor, [])
       # Start your own worker by calling: Checkers.Worker.start_link(arg1, arg2, arg3)
       # worker(Checkers.Worker, [arg1, arg2, arg3]),
+      
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

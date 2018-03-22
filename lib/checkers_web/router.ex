@@ -17,6 +17,7 @@ defmodule CheckersWeb.Router do
     pipe_through :browser # Use the default browser stack
 
     get "/", PageController, :index
+    post "/test", PageController, :test
     get "/game/:game", PageController, :game
     resources "/pictures", PictureController
     resources "/circs", CircController, except: [:new, :edit]
