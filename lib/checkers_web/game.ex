@@ -141,14 +141,7 @@ defmodule CheckersWeb.Game do
         curSquarepid = Board.getSquare(state.gameBoard, curPosition)
         newSquarepid = Board.getSquare(state.gameBoard, newPosition)
         piecePid  =    Square.getPiecePid(curSquarepid)
-        IO.puts("player is")
-        IO.puts("#{player}")
-        IO.puts("player1Name is")
-        IO.puts(Process.alive?(state.player1))
         player1Name = Player.playerName(state.player1)
-        IO.puts("player2Name is")
-        IO.puts("#{player2Name}")
-        IO.inspect(state)
         Square.setPiecePid(newSquarepid, piecePid)
         Square.removePiece(curSquarepid)
         newstate = cond  do
@@ -165,10 +158,21 @@ defmodule CheckersWeb.Game do
               x
             end
           end)
-          PieceList.update_list(Player.getColorSet(state.player1), newRed)
-        IO.puts("new Red is")
-        IO.inspect(newRed)
-        newstate = Map.put(state, :red, newRed)
+        PieceList.update_list(Player.getColorSet(state.player1), newRed)
+        #logic for diagonal movement
+        {intcurPosition, ""}= Atom.to_string(curPosition) |> Integer.parse
+        {intnewPosition, ""}= Atom.to_string(newPosition) |> Integer.parse
+        diff = abs(intcurPosition - intnewPosition)
+        IO.puts("diff is")
+        IO.puts("#{diff}")
+        newstate = if(diff == 14 || diff == 18) do
+          IO.puts("called diagnoal")
+         computeDiagonalPieceMovement(intcurPosition, intnewPosition, state, color, diff)
+        else
+          state
+        end
+        
+        newstate = Map.put(newstate, :red, newRed)
         allPos = Board.getAllPositions(state.gameBoard)
         newstate = Map.put(newstate, :all, allPos)
         newstate
@@ -185,15 +189,70 @@ defmodule CheckersWeb.Game do
               x
             end
           end)
-          PieceList.update_list(Player.getColorSet(state.player2), newBlack)
+        PieceList.update_list(Player.getColorSet(state.player2), newBlack)
         IO.puts("new Black is")
         IO.inspect(newBlack)
-        newstate = Map.put(state, :black, newBlack)
+        #logic for diagonal movement
+        {intcurPosition, ""}= Atom.to_string(curPosition) |> Integer.parse
+        {intnewPosition, ""}= Atom.to_string(newPosition) |> Integer.parse
+        diff = abs(intcurPosition - intnewPosition)
+        IO.puts("diff is")
+        IO.puts("#{diff}")
+        newstate = if(diff == 14 || diff == 18) do
+          IO.puts("called diagnoal")
+         computeDiagonalPieceMovement(intcurPosition, intnewPosition, state, color, diff)
+        else
+          state
+        end
+        newstate = Map.put(newstate, :black, newBlack)
         allPos = Board.getAllPositions(state.gameBoard)
         newstate = Map.put(newstate, :all, allPos)
         newstate
         true -> state 
         end  
+      end
+      def computeDiagonalPieceMovement(intcurPosition, intnewPosition, state, color, diff) do
+        IO.puts("entered diagnoal")
+        cond do
+        color == "red" -> 
+          blackPositions = state.black
+          atNextPos = cond do
+            diff == 14 -> 
+                atNextPos = Integer.to_string(intcurPosition + 7) |> String.to_atom
+            diff == 18  ->
+              Integer.to_string(intcurPosition + 9) |> String.to_atom
+            true -> :"n"
+          end
+        blackPositions = if(atNextPos!= :"n") do
+        blackSquare = Board.getSquare(state.gameBoard, atNextPos)
+        Square.removePiece(blackSquare)
+        indexOfSelected = Enum.find_index(blackPositions, fn(x) -> x == atNextPos end)
+        List.delete_at(blackPositions, indexOfSelected)
+          else
+              blackPositions
+        end
+        Map.put(state, :black, blackPositions)
+        color == "black" -> 
+          IO.puts("entered diagnoal black")
+          redPositions = state.red
+          atNextPos = cond do
+            diff == 14 -> 
+                atNextPos = Integer.to_string(intcurPosition - 7) |> String.to_atom
+            diff == 18  ->
+              Integer.to_string(intcurPosition - 9) |> String.to_atom
+            true -> :"n"
+          end
+        redPositions = if(atNextPos!= :"n") do
+        redSquare = Board.getSquare(state.gameBoard, atNextPos)
+        Square.removePiece(redSquare)
+        indexOfSelected = Enum.find_index(redPositions, fn(x) -> x == atNextPos end)
+        List.delete_at(redPositions, indexOfSelected)
+          else
+             redPositions
+        end
+        Map.put(state, :red, redPositions)
+        true -> state
+      end
       end
 
       def movePiece(:error, _player, _curPosition, _newPosition, state) do

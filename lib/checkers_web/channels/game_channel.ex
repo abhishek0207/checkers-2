@@ -76,10 +76,6 @@ defmodule CheckersWeb.GameChannel do
               curPlayer = Map.get(payload, "player")
               newPosition = Map.get(payload, "column_position")
               newPosition = Integer.to_string(newPosition)
-              IO.puts("enterede move red")
-              IO.puts("#{curPlayer}")
-              IO.puts("#{newPosition}")
-              IO.puts("#{current}")
               response=Game.moveRed({:global, gameName}, curPlayer, current, newPosition)
               case response do
                   :ok -> 

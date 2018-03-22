@@ -112,6 +112,7 @@ defmodule Checkers.GameLogic do
                 indexOfSelected = Enum.find_index(redPositions, fn(x) -> x == (selected - 7) end)
                 List.delete_at(redPositions, indexOfSelected)
             diff == 18  ->
+                IO.puts("entered 18 block")
                 indexOfSelected = Enum.find_index(redPositions, fn(x) -> x == (selected - 9) end)
                 List.delete_at(redPositions, indexOfSelected)
             true       -> redPositions
