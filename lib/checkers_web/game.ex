@@ -1,4 +1,4 @@
-defmodule CheckersWeb.Game do
+defmodule CheckersWeb.Game do 
     use GenServer
     alias CheckersWeb.Game.Board
     alias CheckersWeb.Game.Player
@@ -23,15 +23,15 @@ defmodule CheckersWeb.Game do
         gameBoard: nil,
         red: nil,
         black: nil,
-        all: nil,
+        all: nil, 
         fsm: :none,
-        isGameStarted: false
+        isGameStarted: false,
+        messages: [],
+        jump: false,
+        kings: []
       ]
       #client_side
       def start_link(gameName, player) when not is_nil gameName do
-        IO.puts("entered Gen Server")
-        IO.puts("game name is #{gameName}")
-        IO.puts("player name is #{player}")
         GenServer.start_link(__MODULE__,  %{gameName: gameName, player: player }, name: {:global, gameName})
       end
       #server_side
@@ -49,7 +49,7 @@ defmodule CheckersWeb.Game do
         newList = Enum.map(newList, fn x -> Piece.getPosition(x) end)
         newList = Enum.map(newList, fn x-> Board.getBoardPosition(board, x) end)
         allPos = Board.getAllPositions(board)
-        {:ok, fsm} = Rules.start_link()
+        {:ok, fsm} = Rules.start_link(player)
         {:ok, %__MODULE__{id: gameName, isGameStarted: true, player1: player1, player1Joined: true, player2: player2, red: newList, gameBoard: board, fsm: fsm, all: allPos}}
       end
 
@@ -62,8 +62,8 @@ defmodule CheckersWeb.Game do
     end
 
      def handle_call({:addPlayer, name}, _from, state) do
-      newState = Rules.add_player(state.fsm)|> add_player_reply(state, name)
-      Rules.player1_turn(state.fsm) 
+      newState = Rules.add_player(state.fsm, name)|> add_player_reply(state, name)
+      Rules.player1_turn(state.fsm)
       {:reply, :ok, newState}
      end
 
@@ -86,7 +86,19 @@ defmodule CheckersWeb.Game do
      def call_demo(pid) do
        GenServer.call(pid, :demo)
      end
-
+     def insertChatMessage(pid, message, player) do
+       GenServer.call(pid, {:chat, player, message})
+     end
+     def handle_call({:chat, player, message}, _from, state) do
+          chatMessage = state.messages
+          IO.puts(player)
+          IO.puts(message)
+          newMessage = player <> " : " <> message
+          chatMessages = chatMessage  ++ [newMessage]
+          state = Map.put(state, :messages, chatMessages)
+          {:reply, state.messages, state}
+     end
+     
      def handle_call(:demo, _from, state) do
       {:reply, state, state}
       end
@@ -104,34 +116,44 @@ defmodule CheckersWeb.Game do
       end
       def handle_call({:setBlackPieceList, player, board}, _from, state) do
         Player.setPieces(player, board,"black")
+
         {:reply, :ok, state}
      end
-      def moveRed(pid, player, curPos, newPosition) do
-        GenServer.call(pid, {:moveRed,  player, curPos, newPosition})
+      def moveRed(pid, player, curPos, newPosition, jump) do
+        GenServer.call(pid, {:moveRed,  player, curPos, newPosition, jump})
       end
       def moveBlack(pid, player, curPosition, newPosition) do
         GenServer.call(pid, {:moveBlack,  player, curPosition, newPosition})
       end
 
-      def handle_call({:moveRed, player, current, newPosition}, _from, state) do
+      def handle_call({:moveRed, player, current, newPosition, jump}, _from, state) do
         #will just update square pids in pieces
-        IO.puts("moving red is ")
-        IO.puts("new Position is ")
-        IO.inspect(newPosition)
-        IO.puts("#{player}")
-        IO.puts("player 1 is")
-        IO.puts("#{Process.alive?(state.player1)}")
-        IO.puts(Player.tostring(state.player1))
-        playerName = player
-        IO.puts("#{playerName}")
-        newState = movePiece(:ok, player, current, newPosition, state, "red")
+        cond do
+        jump == true -> newState = movePiece(:ok, player, current, newPosition, state, "red")
         {:reply, :ok, newState} 
+        true ->
+        turn = Rules.move_red(state.fsm, player)
+        case turn do
+          :ok ->  
+            newState = movePiece(:ok, player, current, newPosition, state, "red")
+              {:reply, :ok, newState} 
+          :error ->
+              {:reply, :error, state}
+            end
+        end
       end
 
       def handle_call({:moveBlack, player, curPosition, newPosition}, _from, state) do
         #will just update square pids in pieces
-        newState = movePiece(:ok, player, curPosition, newPosition, state, "black")
+        IO.inspect(state.fsm)
+        turn = Rules.move_black(state.fsm, player)
+        case turn do
+        :ok -> 
+          newState = movePiece(:ok, player, curPosition, newPosition, state, "black")
         {:reply, :ok, newState} 
+        :error -> {:reply, :error, state}
+        end
+        
       end
 
       def movePiece(:ok, player, curPosition, newPosition, state, color) do
@@ -144,9 +166,11 @@ defmodule CheckersWeb.Game do
         player1Name = Player.playerName(state.player1)
         Square.setPiecePid(newSquarepid, piecePid)
         Square.removePiece(curSquarepid)
+        kingInfo = []
         newstate = cond  do
+
+
         player == player1Name && color == "red" -> 
-          IO.puts("entered in the red condition")  
           newList = PieceList.getList(Player.getColorSet(state.player1))
           oldRed = state.red
           newRed = Enum.map(oldRed, fn x -> 
@@ -158,26 +182,47 @@ defmodule CheckersWeb.Game do
               x
             end
           end)
-        PieceList.update_list(Player.getColorSet(state.player1), newRed)
+        
+        #PieceList.update_list(Player.getColorSet(state.player1), newRed)
         #logic for diagonal movement
         {intcurPosition, ""}= Atom.to_string(curPosition) |> Integer.parse
         {intnewPosition, ""}= Atom.to_string(newPosition) |> Integer.parse
+        king = if intnewPosition > 56 do
+          IO.puts("entered")
+          Piece.makeKing(piecePid)
+          squarePid = Piece.getPosition(piecePid)
+          position  = Board.getBoardPosition(state.gameBoard, squarePid)
+          {position, ""} = Atom.to_string(position) |> Integer.parse()
+                    IO.puts("#{position}")
+                    position
+        else 
+          0
+        end
+       
         diff = abs(intcurPosition - intnewPosition)
-        IO.puts("diff is")
-        IO.puts("#{diff}")
         newstate = if(diff == 14 || diff == 18) do
-          IO.puts("called diagnoal")
          computeDiagonalPieceMovement(intcurPosition, intnewPosition, state, color, diff)
         else
           state
         end
         
+        newstate = if (king!= 0) do
+          kinglist = newstate.kings
+          newstate = if(Enum.member?(kinglist, king)) do
+            newstate
+          else 
+            kinglist = kinglist ++ [king]
+            newstate = Map.put(newstate, :kings, kinglist)
+            newstate
+          end
+          newstate
+        end
         newstate = Map.put(newstate, :red, newRed)
         allPos = Board.getAllPositions(state.gameBoard)
         newstate = Map.put(newstate, :all, allPos)
         newstate
+        
         player == player2Name && color == "black" -> 
-          IO.puts("entered black party") 
           newList = PieceList.getList(Player.getColorSet(state.player2))
           oldBlack = state.black
           newBlack = Enum.map(oldBlack, fn x -> 
@@ -189,21 +234,40 @@ defmodule CheckersWeb.Game do
               x
             end
           end)
-        PieceList.update_list(Player.getColorSet(state.player2), newBlack)
-        IO.puts("new Black is")
-        IO.inspect(newBlack)
+        #PieceList.update_list(Player.getColorSet(state.player2), newBlack)
         #logic for diagonal movement
         {intcurPosition, ""}= Atom.to_string(curPosition) |> Integer.parse
         {intnewPosition, ""}= Atom.to_string(newPosition) |> Integer.parse
         diff = abs(intcurPosition - intnewPosition)
-        IO.puts("diff is")
-        IO.puts("#{diff}")
         newstate = if(diff == 14 || diff == 18) do
-          IO.puts("called diagnoal")
          computeDiagonalPieceMovement(intcurPosition, intnewPosition, state, color, diff)
         else
           state
         end
+        king = if intnewPosition <= 8 do
+          IO.puts("entered")
+          Piece.makeKing(piecePid)
+          squarePid = Piece.getPosition(piecePid)
+          position  = Board.getBoardPosition(state.gameBoard, squarePid)
+          {position, ""} = Atom.to_string(position) |> Integer.parse()
+                    IO.puts("#{position}")
+                    position
+        else 
+          0
+        end
+
+        newstate = if (king!= 0) do
+          kinglist = newstate.kings
+          newstate = if(Enum.member?(kinglist, king)) do
+            newstate
+          else 
+            kinglist = kinglist ++ [king]
+            newstate = Map.put(newstate, :kings, kinglist)
+            newstate
+          end
+          newstate
+        end
+
         newstate = Map.put(newstate, :black, newBlack)
         allPos = Board.getAllPositions(state.gameBoard)
         newstate = Map.put(newstate, :all, allPos)
@@ -211,8 +275,8 @@ defmodule CheckersWeb.Game do
         true -> state 
         end  
       end
+     
       def computeDiagonalPieceMovement(intcurPosition, intnewPosition, state, color, diff) do
-        IO.puts("entered diagnoal")
         cond do
         color == "red" -> 
           blackPositions = state.black
@@ -251,6 +315,7 @@ defmodule CheckersWeb.Game do
              redPositions
         end
         Map.put(state, :red, redPositions)
+        Map.put(state, :jump, true)
         true -> state
       end
       end
@@ -264,5 +329,10 @@ defmodule CheckersWeb.Game do
         end
       def handle_cast(:stop, state) do
           {:stop, :normal, state}
+      end
+      def converttoIntegerList(someList) do
+        Enum.map(someList, fn x -> 
+          {val, ""} = Atom.to_string(x)|>Integer.parse 
+              val end)
       end
     end

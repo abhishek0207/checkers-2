@@ -4,21 +4,22 @@ defmodule CheckersWeb.GameChannel do
     alias CheckersWeb.Game.Supervisor
     alias CheckersWeb.Game.Presence
     alias CheckersWeb.Game.Player
+    alias CheckersWeb.Game.Square
+    alias CheckersWeb.Game.PieceList
+    alias CheckersWeb.Game.Piece
+    alias CheckersWeb.Game.Board
     def join("game:" <> game, payload, socket) do
             player = Map.get(payload, "player")
-            IO.puts("#{player} joined the channel")
-                {:ok, socket}
+            send(self(), {:after_join, player})
+              {:ok, socket}
              end
-         def handle_info({:after_join, player}, socket) do
-            IO.puts("entered after join clause")
-            "game:" <> gameName = socket.topic
-            state = Game.call_demo({:global, gameName})
-            broadcast! socket, "add_player", %{player: player}
-            {:noreply, socket}
-          end
-
-         def handle_in("add_player", player, socket) do
-            IO.puts("entereded add player")
+    def handle_info({:after_join, player}, socket) do
+                {:ok, _} = Presence.track(socket, player, %{
+                online_at: inspect(System.system_time(:seconds))
+                })
+                {:noreply, socket}
+    end
+         def addAnotherPlayer("add_player", player, socket) do
             IO.inspect(player)
             "game:" <> gameName = socket.topic
             case Game.add_player(socket.topic, player) do
@@ -28,6 +29,7 @@ defmodule CheckersWeb.GameChannel do
                 state = Game.call_demo({:global, gameName})
                 black = state.black
                 red = state.red
+                player1 = Player.playerName(state.player1)
                 red = Enum.map(red, fn x -> 
                     {val, ""} = Atom.to_string(x)|>Integer.parse 
                         val end)
@@ -35,14 +37,19 @@ defmodule CheckersWeb.GameChannel do
                     {val, ""} = Atom.to_string(x)|>Integer.parse 
                         val end)
                 all = state.all
-                curState = %{"player" =>  player, "black" => black, "red" => red, "all"=> all}
-                broadcast! socket, "player2_added", %{message:
-                curState}
-                {:reply, {:ok, curState}, socket}
-              {:error, reason} ->
-                {:reply, {:error, %{reason: inspect(reason)}}, socket}
-              :error -> {:reply, :error, socket}
+                curState = %{"player" =>  player, "player1" => player1, "black" => black, "red" => red, "all"=> all, "chat" => state.messages, "message" => "#{player} has Joined, please start the game. you have red checkers"}
+                curState
             end
+          end
+          def handle_in("newMessage", payload, socket) do
+              something = Map.get(payload, "message")
+              player = Map.get(payload, "player")
+              "game:" <> gameName = socket.topic
+              IO.puts(something)
+              messages = Game.insertChatMessage({:global, gameName}, something, player )
+              broadcast! socket, "new_message", %{chatmessages:
+                                    messages}
+              {:reply, {:ok, %{}}, socket}
           end
           def handle_in("new_game", payload, socket) do
             "game:"<>gameName = socket.topic
@@ -61,13 +68,69 @@ defmodule CheckersWeb.GameChannel do
                     all = state.all
                     curState = %{"player" =>  playerName, "red" => red, "all" => all, "gameStarted" => gameStarted, "black" => []}
                     socket = socket |> assign(:curState, curState)
-                    IO.inspect(socket.assigns[:curState])
                     broadcast! socket, "player1_added", %{message:
                         curState}
                     {:reply, {:ok, curState}, socket}
-                    {:error, reason} ->
-                    {:reply, {:error, %{reason: inspect(reason)}}, socket}
+                {:error, reason} ->
+                        case GenServer.whereis({:global, gameName}) do
+                            nil -> 
+                            {:reply, {:error, "game does not exist"}, socket}
+                            pid ->  
+                                state = Game.call_demo({:global, gameName})
+                                IO.inspect(state)
+                                cond do
+                                Player.playerName(state.player2) == :none ->
+                                    newState = addAnotherPlayer("add_player", player, socket)
+                                    broadcast! socket, "player2_added", %{message:
+                                    newState}
+                                    {:reply, {:ok, newState}, socket}
+                                true -> 
+                                    red = Game.converttoIntegerList(state.red)
+                                    black = Game.converttoIntegerList(state.black)
+                                    player1 = Player.playerName(state.player1)
+                                    player2 = Player.playerName(state.player2)
+                                    curstate = %{"player" => player , "player1"=> player1, "player2"=>player2, "red" => red, "all" => state.all, "gameStarted" => state.isGameStarted, "black" => black}
+                                    broadcast! socket, "new_spectator", %{message:
+                                    curstate}
+                                    {:reply,  {:ok, curstate}, socket}
+                                end
+                                #IO.puts("Server is already started")
+                                #state = Game.call_demo({:global, gameName})
+                                #IO.inspect(state)
+                                #player = ""
+                                #if(state.player1) do
+                                #    player =Player.playerName(state.player1)
+                                #end
+                                #red = Game.converttoIntegerList(state.red)
+                                #black = Game.converttoIntegerList(state.black)
+                                #IO.inspect(red)
+                                #IO.inspect(black)
+                                #{:reply, {:ok, %{"player" => player , "red" => red, "all" => state.all, "gameStarted" => state.isGameStarted, "black" => black}}, socket}
+                        end
+                   
                  end
+          end
+          def handle_in("show_subscribers", _payload, socket) do
+            broadcast! socket, "subscribers", Presence.list(socket)
+            {:noreply, socket}
+            end
+          def handle_in("checkAvailableRedJump", payload, socket) do
+            "game:"<>gameName = socket.topic
+            state =CheckersWeb.Game.call_demo({:global, gameName})
+            player = Player.playerName(state.player1)
+            curPosition = Map.get(payload, "curPosition")
+            allPosition = Map.get(payload, "allPositions")
+            state = Map.get(payload, "state")
+            newLeft = curPosition + 14
+            newRight = curPosition + 18
+            cond do
+            Enum.at(allPosition, newRight - 1) =="-" && Enum.at(allPosition, newRight - 10) == "b" -> 
+            send(self(), {"moveRed", %{"curPosition" => curPosition, "player"=> player, "column_position" => newRight  }})
+            Enum.at(allPosition, newLeft - 1) =="-" && Enum.at(allPosition, newLeft - 10) == "b" -> 
+                send(self(), {"moveRed", %{"curPosition" => curPosition, "player"=> player, "column_position" => newLeft }})
+            true -> state
+            end
+            {:noreply, socket}
           end
           def handle_in("moveRed", payload, socket) do
              "game:"<>gameName = socket.topic
@@ -75,11 +138,13 @@ defmodule CheckersWeb.GameChannel do
               current = Integer.to_string(current)
               curPlayer = Map.get(payload, "player")
               newPosition = Map.get(payload, "column_position")
+              jump = Map.get(payload, "jump")
               newPosition = Integer.to_string(newPosition)
-              response=Game.moveRed({:global, gameName}, curPlayer, current, newPosition)
+              response=Game.moveRed({:global, gameName}, curPlayer, current, newPosition, jump)
+              IO.inspect(response)
+              state =CheckersWeb.Game.call_demo({:global, gameName})
               case response do
                   :ok -> 
-                  state =CheckersWeb.Game.call_demo({:global, gameName})
                   red = Enum.map(state.red, fn x -> 
                     {x, ""} = Atom.to_string(x) |> Integer.parse()
                     x
@@ -88,16 +153,21 @@ defmodule CheckersWeb.GameChannel do
                     {x, ""} = Atom.to_string(x) |> Integer.parse()
                     x
                 end)
-                  curState = %{"red" => red, "all" => state.all, "black" => black}
+                player2  = Player.playerName(state.player2)
+                #get King Info
+                IO.puts("state on channel is")
+                IO.inspect(state)
+                curState = %{"player"=> curPlayer, "player2" => player2, "red" => red, "all" => state.all, "black" => black, "kings" => state.kings}
                   broadcast! socket, "moved_Red", %{message:
                         curState}
                     {:reply,{:ok, curState}, socket}
-                    {:error, reason} ->
-                        {:reply, {:error, %{reason: inspect(reason)}}, socket}
+                    :error->
+                        {:reply, :error, socket}
               end
           end
         def handle_in("moveBlack", payload, socket) do
             "game:"<>gameName = socket.topic
+
             current = Map.get(payload, "curPosition")
             current = Integer.to_string(current)
             curPlayer = Map.get(payload, "player")
@@ -105,9 +175,9 @@ defmodule CheckersWeb.GameChannel do
             newPosition = Integer.to_string(newPosition)
             IO.puts("enterede move Black")
             response=Game.moveBlack({:global, gameName}, curPlayer, current, newPosition)
+            state =CheckersWeb.Game.call_demo({:global, gameName})
             case response do
                 :ok -> 
-                state =CheckersWeb.Game.call_demo({:global, gameName})
                 red = Enum.map(state.red, fn x -> 
                   {x, ""} = Atom.to_string(x) |> Integer.parse()
                   x
@@ -116,10 +186,15 @@ defmodule CheckersWeb.GameChannel do
                   {x, ""} = Atom.to_string(x) |> Integer.parse()
                   x
               end)
-                curState = %{"red" => red, "all" => state.all, "black" => black}
+              player1 = Player.playerName(state.player1)
+              #king info added
+              
+                curState = %{"player" => curPlayer, "player1" => player1, "red" => red, "all" => state.all, "black" => black, "kings" => state.kings}
                 broadcast! socket, "moved_black", %{message:
                       curState}
                   {:reply,{:ok, curState}, socket}
+                :error -> 
+                    {:reply, :error, socket}
                   {:error, reason} ->
                       {:reply, {:error, %{reason: inspect(reason)}}, socket}
             end

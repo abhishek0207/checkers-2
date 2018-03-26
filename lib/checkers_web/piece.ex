@@ -12,11 +12,17 @@ defmodule CheckersWeb.Game.Piece do
     def start_link() do
         Agent.start_link(fn-> %Piece{} end)
     end
+
     def get_state(pid) do
         Agent.get(pid, fn state -> state end)
     end
+
     def getPosition(pid) do
         Agent.get(pid, fn state -> state.position end)
+    end
+
+    def makeKing(pid) do
+        Agent.update(pid, fn state -> Map.put(state, :isKing, true) end)
     end
 
     def setPosition(pid, squarePid) do
@@ -46,7 +52,7 @@ defmodule CheckersWeb.Game.Piece do
         Agent.update(pid, fn state -> Map.put(state, :color, color) end)
     end
     def toString(pid) do
-        " color => #{getColor(pid)}"
+        " color => #{getColor(pid)}, king => #{king?(pid)} "
     end
    
 end

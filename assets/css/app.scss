@@ -2,6 +2,14 @@
 
 @import "bootstrap";
 
+html {
+    height: 100%;                      
+  }
+  body {
+    height: 100%;                       
+    margin: 0;                         
+    overflow: hidden;
+  }
 
 .tile{
     padding:10px;
@@ -19,7 +27,6 @@
     flex-direction:column;
     height:90vh;
     align-items:center;
-    width:90vw;
   }
   
   .checker_row{
@@ -61,7 +68,36 @@
       top:10pxa;
       display:table-cell;
       position:relative;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.24);
   }
   .highlight{
       border:3px solid green;
+  }
+  .chat{
+    background: rgba(169, 169, 169, 0.623);
+    height: 100%;
+    position: relative;
+    width:inherit;
+  }
+  #chatBox{
+      position: fixed;
+      bottom: 0;
+  }
+  #chatArea {
+      background: white;
+      margin:10px;
+      height:450px;
+      overflow-y: auto;
+  }
+  .king {
+      margin: 0 auto;
+      font-weight: bold;
+      vertical-align: middle;
+      left: 40%;
+      font-size: 20px;
+      position: relative;
+      color:white;
+  }
+  .kingnone {
+      display: none
   }

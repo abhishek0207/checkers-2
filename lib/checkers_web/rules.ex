@@ -1,11 +1,13 @@
 defmodule CheckersWeb.Game.Rules do
     @behaviour :gen_statem
     alias CheckersWeb.Game.Rules
-    def start_link() do
-     :gen_statem.start_link(__MODULE__, :ok, [])
+
+    def start_link(player) do
+     :gen_statem.start_link(__MODULE__, player, [])
     end
-    def init(:ok) do
-        {:ok, :initialized, []} 
+    def init(player) do
+        data = %{player1: player, player2: ""}
+        {:ok, :initialized, data} 
     end
     def callback_mode(), do: :state_functions
 
@@ -23,12 +25,14 @@ defmodule CheckersWeb.Game.Rules do
         {:keep_state_and_data, {:reply, from, :initialized}}
     end
     #client function for adding a player
-    def add_player(fsm) do
-        :gen_statem.call(fsm, :add_player )
+    def add_player(fsm, player) do
+        :gen_statem.call(fsm, {:add_player, player} )
     end
     #callback for above and the name is initialized because it is for initialized state
 
-    def initialized({:call, from}, :add_player, state_data) do
+    def initialized({:call, from}, {:add_player, player}, state_data) do
+        state_data = Map.put(state_data, :player2, player)
+        IO.inspect(state_data)
         {:next_state, :players_set, state_data, {:reply, from, :ok}}
     end
     #incase of invalid events
@@ -42,6 +46,9 @@ defmodule CheckersWeb.Game.Rules do
     end
     def player1_turn(fsm) do
         :gen_statem.call(fsm, :player1turn)
+    end
+    def player2_turn(fsm) do
+        :gen_statem.call(fsm, :player2turn)
     end
     def players_set({:call, from}, :player1turn, state_data) do
         {:next_state, :player1_turn,  state_data, {:reply, from, :ok}}
@@ -59,8 +66,13 @@ defmodule CheckersWeb.Game.Rules do
     def move_black(fsm, player) do
         :gen_statem.call(fsm, {:move_black, player})
     end
-    def player1_turn({:call, from}, {:move_red, :player1}, state_data) do
+    def player1_turn({:call, from}, {:move_red, player}, state_data) do
+        if(player == Map.get(state_data, :player1))
+        do
         {:next_state, :player2_turn, state_data, {:reply, from, :ok}}
+        else 
+            {:keep_state_and_data, {:reply, from, :error}}
+        end
     end
     def player1_turn({:call, from}, _, _state_data) do
         {:keep_state_and_data, {:reply, from, :error}}
@@ -74,8 +86,13 @@ defmodule CheckersWeb.Game.Rules do
     def player1_turn(_event, _caller_pid, state) do
         {:reply, {:error, :action_out_of_sequence}, :player1_turn, state}
     end
-    def player2_turn({:call, from}, {:move_black, :player2}, state_data) do
+    def player2_turn({:call, from}, {:move_black, player}, state_data) do
+        if(player == Map.get(state_data, :player2))
+        do
         {:next_state, :player1_turn, state_data, {:reply, from, :ok}}
+        else 
+            {:keep_state_and_data, {:reply, from, :error}}
+        end
     end
     def player2_turn({:call,from}, :show_current_state, _state_data) do
         {:keep_state_and_data, {:reply, from, :player2_turn}}

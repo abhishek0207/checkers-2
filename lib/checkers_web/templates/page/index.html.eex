@@ -15,6 +15,12 @@ function alreadyClicked() {
   window.location.href= "/game/" + input_value + "?playerName=" + name + "&joined=true"
   return false
 }
+function alreadyClicked() {
+  let input_value = document.getElementById("game-input-joined").value
+  let name = document.getElementById("name-input-joined").value
+  window.location.href= "/game/" + input_value + "?playerName=" + name + "&joined=true"
+  return false
+}
 </script>
 <div class="row">
   <div class="col">
@@ -28,7 +34,7 @@ function alreadyClicked() {
     <h1 id="index-page">Join an Existing Game</h1>
     <p>GameName: <input type="text" id="game-input-joined"></p>
     <p>Name: <input type="text" id="name-input-joined"></p>
-    <p><button id="game-button" onclick="alreadyClicked()">Join Game</button></p>
+    <p><button id="join-button" onclick="alreadyClicked()">Join Game</button></p>
     <p id="game-output"></p>
   </div>
 </div>

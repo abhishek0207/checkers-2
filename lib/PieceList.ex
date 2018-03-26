@@ -41,7 +41,7 @@ defmodule CheckersWeb.Game.PieceList do
     end
     def pieceStrings(pid) do
         state = Agent.get(pid, fn state -> state end)
-        pieceList = Enum.map(state, fn x-> Piece.tostring(x) end)
+        pieceList = Enum.map(state, fn x-> Piece.toString(x) end)
         Enum.join(pieceList, " ,")
     end
 end
