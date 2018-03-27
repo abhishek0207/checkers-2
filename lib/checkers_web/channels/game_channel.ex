@@ -141,7 +141,6 @@ defmodule CheckersWeb.GameChannel do
               jump = Map.get(payload, "jump")
               newPosition = Integer.to_string(newPosition)
               response=Game.moveRed({:global, gameName}, curPlayer, current, newPosition, jump)
-              IO.inspect(response)
               state =CheckersWeb.Game.call_demo({:global, gameName})
               case response do
                   :ok -> 
@@ -155,9 +154,7 @@ defmodule CheckersWeb.GameChannel do
                 end)
                 player2  = Player.playerName(state.player2)
                 #get King Info
-                IO.puts("state on channel is")
-                IO.inspect(state)
-                curState = %{"player"=> curPlayer, "player2" => player2, "red" => red, "all" => state.all, "black" => black, "kings" => state.kings}
+                curState = %{"player"=> curPlayer, "player2" => player2, "red" => red, "all" => state.all, "black" => black, "kings" => state.kingmap}
                   broadcast! socket, "moved_Red", %{message:
                         curState}
                     {:reply,{:ok, curState}, socket}
@@ -173,7 +170,6 @@ defmodule CheckersWeb.GameChannel do
             curPlayer = Map.get(payload, "player")
             newPosition = Map.get(payload, "column_position")
             newPosition = Integer.to_string(newPosition)
-            IO.puts("enterede move Black")
             response=Game.moveBlack({:global, gameName}, curPlayer, current, newPosition)
             state =CheckersWeb.Game.call_demo({:global, gameName})
             case response do
@@ -189,7 +185,7 @@ defmodule CheckersWeb.GameChannel do
               player1 = Player.playerName(state.player1)
               #king info added
               
-                curState = %{"player" => curPlayer, "player1" => player1, "red" => red, "all" => state.all, "black" => black, "kings" => state.kings}
+                curState = %{"player" => curPlayer, "player1" => player1, "red" => red, "all" => state.all, "black" => black, "kings" => state.blackKing }
                 broadcast! socket, "moved_black", %{message:
                       curState}
                   {:reply,{:ok, curState}, socket}

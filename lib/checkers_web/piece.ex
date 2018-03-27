@@ -26,7 +26,6 @@ defmodule CheckersWeb.Game.Piece do
     end
 
     def setPosition(pid, squarePid) do
-        IO.puts("entered set position")
         Agent.update(pid, fn state -> Map.put(state, :position, squarePid) end)
     end 
 

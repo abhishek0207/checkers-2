@@ -19,7 +19,8 @@ export class Board extends React.Component {
                 black={this.props.black} blackmethod={this.props.onBlackClick} 
                 redmethod={this.props.onRedClick}
                 legal ={this.props.legal} nextMoves = {selected.possiblemoves}
-                kingList = {this.props.kingList} />)
+                kingList = {this.props.kingList}
+                blackKing = {this.props.blackKing} />)
             }
             else {
                 rows.push(<CheckerRow number = {i} red={this.props.red} 
@@ -29,7 +30,8 @@ export class Board extends React.Component {
                     black={this.props.black} blackmethod={this.props.onBlackClick} 
                     redmethod={this.props.onRedClick}
                     legal ={this.props.legal}
-                    kingList = {this.props.kingList} />)
+                    kingList = {this.props.kingList}
+                    blackKing = {this.props.blackKing} />)
             }
         }
         return(
@@ -52,6 +54,7 @@ export class CheckerRow extends React.Component {
         let moveTolegal = this.props.legal
         moveTolegal(column_id)
     }
+
     render() {
         let row = [];
         let checker_column_number = 0;
@@ -65,7 +68,8 @@ export class CheckerRow extends React.Component {
                     channel = {this.props.channel}
                     player = {this.props.player}
                     red={this.props.red} redmethod = {this.props.redmethod}
-                    kingList = {this.props.kingList} />)
+                    kingList = {this.props.kingList} 
+                    blackKing = {this.props.blackKing}/>)
             }
             else if(this.props.black.includes(checker_column_number)){
                 row.push(<CheckerCell number = {checker_column_number} 
@@ -73,7 +77,8 @@ export class CheckerRow extends React.Component {
                     player = {this.props.player}
                     all = {this.props.all}
                     black={this.props.black} blackmethod={this.props.blackmethod}
-                    kingList = {this.props.kingList} />)
+                    kingList = {this.props.kingList}
+                    blackKing = {this.props.blackKing} />)
             }
             else {
                 if(this.props.nextMoves) {
@@ -83,7 +88,8 @@ export class CheckerRow extends React.Component {
                         all = {this.props.all} 
                         player = {this.props.player}
                         onClick={() => this.movecheckers((this.props.number-1) * 8 + i)} 
-                        kingList = {this.props.kingList}/>)
+                        kingList = {this.props.kingList}
+                        blackKing = {this.props.blackKing}/>)
                     }
                     else {
                         row.push(<CheckerCell number = {checker_column_number}
@@ -91,7 +97,8 @@ export class CheckerRow extends React.Component {
                             all = {this.props.all}
                             player = {this.props.player}
                             kingList = {this.props.kingList}
-                            onClick={() => this.movecheckers((this.props.number-1) * 8 + i)} />)
+                            onClick={() => this.movecheckers((this.props.number-1) * 8 + i)} 
+                            blackKing = {this.props.blackKing}/>)
                     }
                 }
                 else {
@@ -100,7 +107,8 @@ export class CheckerRow extends React.Component {
                         all = {this.props.all}
                         player = {this.props.player}
                         kingList = {this.props.kingList}
-                        onClick={() => this.movecheckers((this.props.number-1) * 8 + i)} />)
+                        onClick={() => this.movecheckers((this.props.number-1) * 8 + i)}
+                        blackKing = {this.props.blackKing} />)
                 }
                 
             }
@@ -134,12 +142,29 @@ export class CheckerCell extends React.Component {
 
         if(this.props.red) {
             if(this.props.red.includes(this.props.number))
-            pieces = <RedCheckers all = {this.props.all} kingList = {this.props.kingList} bPosition = {this.props.number} player={this.props.player} redmethod={this.props.redmethod} channel = {this.props.channel} hasChecker = {true} checkerType="red"/>
+            {
+            let index = this.props.red.indexOf(this.props.number)
+            if(index in this.props.kingList){
+            pieces = <RedCheckers all = {this.props.all} rownumber = {rownumber}  kingList = {this.props.kingList} king = {true} bPosition = {this.props.number} player={this.props.player} redmethod={this.props.redmethod} channel = {this.props.channel} hasChecker = {true} checkerType="red"/>
         }
+        else {
+            pieces = <RedCheckers all = {this.props.all} rownumber = {rownumber}  kingList = {this.props.kingList} king = {false} bPosition = {this.props.number} player={this.props.player} redmethod={this.props.redmethod} channel = {this.props.channel} hasChecker = {true} checkerType="red"/>
+        }
+    }
+    }
         if(this.props.black){
-            if(this.props.black.includes(this.props.number))
-            pieces = <BlackCheckers all={this.props.all} kingList = {this.props.kingList} bPosition = {this.props.number} player = {this.props.player} blackmethod={this.props.blackmethod} hasChecker={false}   channel = {this.props.channel} checkerType="black"/>
+            if(this.props.black.includes(this.props.number)){
+            let index = this.props.black.indexOf(this.props.number)
+            if(index in this.props.blackKing) {
+                pieces = <BlackCheckers all={this.props.all} rownumber = {rownumber} king ={true} kingList = {this.props.kingList} bPosition = {this.props.number} player = {this.props.player} blackmethod={this.props.blackmethod} hasChecker={false}   channel = {this.props.channel} checkerType="black"/>
+            }
+            else {
+                pieces = <BlackCheckers all={this.props.all} rownumber = {rownumber} king ={false} kingList = {this.props.kingList} bPosition = {this.props.number} player = {this.props.player} blackmethod={this.props.blackmethod} hasChecker={false}   channel = {this.props.channel} checkerType="black"/>
+            }
+           
+    
         }
+    }
         return (
             
             <div className={className} hasChecker={false} kingList = {this.props.kingList} onClick={this.props.onClick} checkerType="">{pieces}</div>
@@ -152,7 +177,7 @@ export class RedCheckers extends React.Component {
         super(props)
         this.state = {
             position: this.props.bPosition,
-            king: false,
+            king: this.props.king,
             nextPositions:[]
         }
         this.handleClick = this.handleClick.bind(this)
@@ -161,8 +186,10 @@ export class RedCheckers extends React.Component {
         let redmethod = this.props.redmethod
         let newPositions = this.state.nextPositions
         let currentPosition =this.state.position;
+        let row = this.props.rownumber
         let newRight = currentPosition + 7
         let newLeft = currentPosition + 9
+        
         let allPositions = this.props.all
         if(allPositions[newLeft - 1] =="b")
             {
@@ -187,28 +214,69 @@ export class RedCheckers extends React.Component {
                     }
                 
             }
+
+            if(this.state.king) {
+                let kingLeft = currentPosition - 9
+                let kingRight = currentPosition - 7
+                if(allPositions[kingLeft - 1] =="b")
+                {
+    
+                    let cuttingMove = kingLeft - 9
+                    if(allPositions[cuttingMove - 1] == "-")
+                        {
+                            newPositions.push(cuttingMove)
+                        }
+                    
+                }
+
+                if(allPositions[kingRight - 1] =="b")
+                {
+    
+                    let cuttingMove = kingRight - 7
+                    if(allPositions[cuttingMove - 1] == "-")
+                        {
+                            newPositions.push(cuttingMove)
+                        }
+                    
+                }
+                
+            }
+
+           
            
         redmethod(this.state.position, this.state.king, this.state.nextPositions)
     }
 
     componentDidMount(){
        let kingflag = false
-            if(this.props.kingList.includes(this.state.position)) {
-               kingflag = true
-            }
+       console.log("earlier state is")
+       console.log(this.state.king)
       let currentPosition = this.state.position
       let newLeft = currentPosition + 7
       let newRight = currentPosition + 9
+      let currentRow = this.props.rownumber
+      let leftRow = Math.ceil(newLeft / 8)
+      let rightRow = Math.ceil(newRight / 8)
       let newPositions = []
-        if(newLeft%8==0){
-            newLeft = 0;
-        }
-        if(newRight%8==0){
-            newRight = 0;
-        }
+      if(leftRow - currentRow == 1)
+      {
         newPositions.push(newLeft)
+      }
+      if(rightRow - currentRow == 1)
+      {
         newPositions.push(newRight)
-        this.setState({nextPositions: newPositions, king: kingflag})
+      }
+        if(this.state.king) {
+            let kingLeftRow = Math.ceil((currentPosition - 7) / 8)
+            let kingRightRow = Math.ceil((currentPosition - 9) / 8)
+            if (currentRow - kingLeftRow == 1) {
+                newPositions.push(currentPosition - 7)
+            }
+            if (currentRow - kingRightRow == 1) {
+                newPositions.push(currentPosition - 9)
+            }      
+        }
+        this.setState({nextPositions: newPositions})
     }
 
     render() {
@@ -230,7 +298,7 @@ export class BlackCheckers extends React.Component {
         super(props)
         this.state = {
             position: this.props.bPosition,
-            king: false,
+            king: this.props.king,
             nextPositions:[]
         }
         this.handleClick = this.handleClick.bind(this)
@@ -242,30 +310,42 @@ export class BlackCheckers extends React.Component {
         let newLeft = currentPosition - 9
         let newPositions = [];
         let allPositions = this.props.all
-        let kingflag = false
-        if(this.props.kingList.includes(this.state.position)) {
-           kingflag = true
+        let currentRow = this.props.rownumber
+        if(this.state.king) {
+            let kingLeftRow = Math.ceil((currentPosition + 7) / 8)
+            let kingRightRow = Math.ceil((currentPosition + 9) / 8)
+            if (kingLeftRow - currentRow  == 1) {
+                newPositions.push(currentPosition + 7)
+            }
+            if (kingRightRow - currentRow == 1) {
+                newPositions.push(currentPosition + 9)
+            }      
         }
-        
-                if(Math.abs(currentPosition - newLeft) <=6 ){
-                    newLeft = 0;
-                }
-                newPositions.push(newLeft)
-                if(Math.abs(currentPosition - newRight >= 9)){
-                    newRight = 0;
-                }
-                newPositions.push(newRight)
-        this.setState({nextPositions: newPositions, king: kingflag})
+        let leftRow = Math.ceil(newLeft / 8)
+        let rightRow = Math.ceil(newRight / 8)
+       
+      if(currentRow - leftRow == 1)
+      {
+        newPositions.push(newLeft)
+      }
+      if(currentRow - rightRow == 1)
+      {
+        newPositions.push(newRight)
+      }
+                
+        this.setState({nextPositions: newPositions})
     }
     handleClick() {
         let blackmethod = this.props.blackmethod
         let allPositions = this.props.all
         let newPositions = this.state.nextPositions
         let currentPosition =this.state.position;
+        let currentRow = this.state.position 
         let newRight = currentPosition - 7
         let newLeft = currentPosition - 9
         if(allPositions[newLeft - 1] =="r")
             {
+
                 let cuttingMove = newLeft - 9
                 if(allPositions[cuttingMove - 1] == "-")
                     {
@@ -277,6 +357,7 @@ export class BlackCheckers extends React.Component {
             if(allPositions[newRight - 1] =="r")
             {
                 let cuttingMove = newRight - 7
+                
                 if(allPositions[cuttingMove - 1] == "-")
                     {
                        
@@ -284,6 +365,34 @@ export class BlackCheckers extends React.Component {
                     }
                 
             }
+
+            if(this.state.king) {
+                let kingLeft = currentPosition + 9
+                let kingRight = currentPosition + 7
+                if(allPositions[kingLeft - 1] =="r")
+                {
+    
+                    let cuttingMove = kingLeft + 9
+                    if(allPositions[cuttingMove - 1] == "-")
+                        {
+                            newPositions.push(cuttingMove)
+                        }
+                    
+                }
+
+                if(allPositions[kingRight - 1] =="r")
+                {
+    
+                    let cuttingMove = kingRight + 7
+                    if(allPositions[cuttingMove - 1] == "-")
+                        {
+                            newPositions.push(cuttingMove)
+                        }
+                    
+                }
+                
+            }
+
            
         blackmethod(this.state.position, this.state.king, newPositions)
     }

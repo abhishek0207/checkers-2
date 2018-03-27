@@ -28,7 +28,9 @@ defmodule CheckersWeb.Game do
         isGameStarted: false,
         messages: [],
         jump: false,
-        kings: []
+        kings: [],
+        kingmap: Map.new,
+        blackKing: Map.new
       ]
       #client_side
       def start_link(gameName, player) when not is_nil gameName do
@@ -136,6 +138,8 @@ defmodule CheckersWeb.Game do
         case turn do
           :ok ->  
             newState = movePiece(:ok, player, current, newPosition, state, "red")
+            IO.inspect("state in red call is")
+            IO.inspect(newState)
               {:reply, :ok, newState} 
           :error ->
               {:reply, :error, state}
@@ -146,6 +150,8 @@ defmodule CheckersWeb.Game do
       def handle_call({:moveBlack, player, curPosition, newPosition}, _from, state) do
         #will just update square pids in pieces
         IO.inspect(state.fsm)
+        IO.puts("state in black is")
+        IO.inspect(state)
         turn = Rules.move_black(state.fsm, player)
         case turn do
         :ok -> 
@@ -166,10 +172,7 @@ defmodule CheckersWeb.Game do
         player1Name = Player.playerName(state.player1)
         Square.setPiecePid(newSquarepid, piecePid)
         Square.removePiece(curSquarepid)
-        kingInfo = []
         newstate = cond  do
-
-
         player == player1Name && color == "red" -> 
           newList = PieceList.getList(Player.getColorSet(state.player1))
           oldRed = state.red
@@ -187,42 +190,54 @@ defmodule CheckersWeb.Game do
         #logic for diagonal movement
         {intcurPosition, ""}= Atom.to_string(curPosition) |> Integer.parse
         {intnewPosition, ""}= Atom.to_string(newPosition) |> Integer.parse
-        king = if intnewPosition > 56 do
-          IO.puts("entered")
+        
+        diff = intcurPosition - intnewPosition
+        if(intnewPosition > 56) do
           Piece.makeKing(piecePid)
-          squarePid = Piece.getPosition(piecePid)
-          position  = Board.getBoardPosition(state.gameBoard, squarePid)
-          {position, ""} = Atom.to_string(position) |> Integer.parse()
-                    IO.puts("#{position}")
-                    position
-        else 
-          0
         end
-       
-        diff = abs(intcurPosition - intnewPosition)
-        newstate = if(diff == 14 || diff == 18) do
+        newstate = if(diff == 14 || diff == -14 || diff == -18 || diff == 18) do
          computeDiagonalPieceMovement(intcurPosition, intnewPosition, state, color, diff)
         else
           state
         end
-        
-        newstate = if (king!= 0) do
-          kinglist = newstate.kings
-          newstate = if(Enum.member?(kinglist, king)) do
-            newstate
-          else 
-            kinglist = kinglist ++ [king]
-            newstate = Map.put(newstate, :kings, kinglist)
-            newstate
-          end
-          newstate
-        end
         newstate = Map.put(newstate, :red, newRed)
+        IO.inspect(newstate)
         allPos = Board.getAllPositions(state.gameBoard)
         newstate = Map.put(newstate, :all, allPos)
+        listOfKings = Enum.filter(newstate.red, fn x ->
+          #these are the positions on the board
+          squarePid = Board.getSquare(state.gameBoard, x)
+          piecePid = Square.getPiecePid(squarePid)
+          Piece.king?(piecePid)
+        end)
+        IO.puts("kings are")
+        IO.inspect(listOfKings)
+        
+          kingmap =%{}  
+          listMap =Enum.map(listOfKings, fn x -> 
+          index = Enum.find_index(newstate.red, fn(y) -> x == y end)
+          Map.put(kingmap, index, x)
+        end)
+
+        IO.puts("list map is ")
+        IO.inspect(listMap)
+        
+        kingmap = if(length(listMap) > 0) do
+          kingmap = Enum.reduce(listMap, fn x, y ->
+            Map.merge(x, y, fn _k, v1, v2 -> v2 ++ v1 end)
+         end)
+        else 
+          newstate.kingmap
+        end
+        IO.inspect(listMap)
+        IO.inspect(kingmap)
+        newstate = Map.put(newstate, :kingmap, kingmap)
         newstate
         
+        ##black started 
         player == player2Name && color == "black" -> 
+          IO.puts("State in black is")
+          IO.inspect(state)
           newList = PieceList.getList(Player.getColorSet(state.player2))
           oldBlack = state.black
           newBlack = Enum.map(oldBlack, fn x -> 
@@ -238,39 +253,54 @@ defmodule CheckersWeb.Game do
         #logic for diagonal movement
         {intcurPosition, ""}= Atom.to_string(curPosition) |> Integer.parse
         {intnewPosition, ""}= Atom.to_string(newPosition) |> Integer.parse
-        diff = abs(intcurPosition - intnewPosition)
-        newstate = if(diff == 14 || diff == 18) do
+        diff = intcurPosition - intnewPosition
+        if(intnewPosition <=8) do
+          Piece.makeKing(piecePid)
+        end
+        newstate = if(diff == 14 || diff == -14 || diff == -18 || diff == 18) do
          computeDiagonalPieceMovement(intcurPosition, intnewPosition, state, color, diff)
         else
           state
-        end
-        king = if intnewPosition <= 8 do
-          IO.puts("entered")
-          Piece.makeKing(piecePid)
-          squarePid = Piece.getPosition(piecePid)
-          position  = Board.getBoardPosition(state.gameBoard, squarePid)
-          {position, ""} = Atom.to_string(position) |> Integer.parse()
-                    IO.puts("#{position}")
-                    position
-        else 
-          0
-        end
-
-        newstate = if (king!= 0) do
-          kinglist = newstate.kings
-          newstate = if(Enum.member?(kinglist, king)) do
-            newstate
-          else 
-            kinglist = kinglist ++ [king]
-            newstate = Map.put(newstate, :kings, kinglist)
-            newstate
-          end
-          newstate
         end
 
         newstate = Map.put(newstate, :black, newBlack)
         allPos = Board.getAllPositions(state.gameBoard)
         newstate = Map.put(newstate, :all, allPos)
+
+        #king logic
+        #blackKing = newstate.blackKing
+        #if(blackKing == nil) do
+         # blackKing = %{}
+         #end
+
+         listOfKings = Enum.filter(newstate.black, fn x ->
+          #these are the positions on the board
+          squarePid = Board.getSquare(state.gameBoard, x)
+          piecePid = Square.getPiecePid(squarePid)
+          Piece.king?(piecePid)
+        end)
+        IO.puts("kings are")
+        IO.inspect(listOfKings)
+        
+          blackKing =%{}  
+          listMap =Enum.map(listOfKings, fn x -> 
+          index = Enum.find_index(newstate.black, fn(y) -> x == y end)
+          Map.put(blackKing, index, x)
+        end)
+
+        IO.puts("list map is ")
+        IO.inspect(listMap)
+        
+        blackKing = if(length(listMap) > 0) do
+          blackKing = Enum.reduce(listMap, fn x, y ->
+            Map.merge(x, y, fn _k, v1, v2 -> v2 ++ v1 end)
+         end)
+        else 
+          newstate.blackKing
+        end
+        IO.inspect(listMap)
+        IO.inspect(blackKing)
+        newstate = Map.put(newstate, :blackKing, blackKing)
         newstate
         true -> state 
         end  
@@ -281,14 +311,21 @@ defmodule CheckersWeb.Game do
         color == "red" -> 
           blackPositions = state.black
           atNextPos = cond do
-            diff == 14 -> 
+            diff == -14 -> 
                 atNextPos = Integer.to_string(intcurPosition + 7) |> String.to_atom
+            diff == 14 -> 
+                  atNextPos = Integer.to_string(intcurPosition - 7) |> String.to_atom
             diff == 18  ->
-              Integer.to_string(intcurPosition + 9) |> String.to_atom
+              Integer.to_string(intcurPosition - 9) |> String.to_atom
+              diff == -18  ->
+                Integer.to_string(intcurPosition + 9) |> String.to_atom
             true -> :"n"
           end
         blackPositions = if(atNextPos!= :"n") do
         blackSquare = Board.getSquare(state.gameBoard, atNextPos)
+        piece = Square.getPiecePid(blackSquare)
+
+        #remove piece from square
         Square.removePiece(blackSquare)
         indexOfSelected = Enum.find_index(blackPositions, fn(x) -> x == atNextPos end)
         List.delete_at(blackPositions, indexOfSelected)
@@ -300,22 +337,29 @@ defmodule CheckersWeb.Game do
           IO.puts("entered diagnoal black")
           redPositions = state.red
           atNextPos = cond do
-            diff == 14 -> 
+            diff == -14 -> 
+              atNextPos = Integer.to_string(intcurPosition + 7) |> String.to_atom
+          diff == 14 -> 
                 atNextPos = Integer.to_string(intcurPosition - 7) |> String.to_atom
-            diff == 18  ->
-              Integer.to_string(intcurPosition - 9) |> String.to_atom
+          diff == 18  ->
+            Integer.to_string(intcurPosition - 9) |> String.to_atom
+            diff == -18  ->
+              Integer.to_string(intcurPosition + 9) |> String.to_atom
             true -> :"n"
           end
+
+
         redPositions = if(atNextPos!= :"n") do
         redSquare = Board.getSquare(state.gameBoard, atNextPos)
+        piece = Square.getPiecePid(redSquare)
         Square.removePiece(redSquare)
         indexOfSelected = Enum.find_index(redPositions, fn(x) -> x == atNextPos end)
         List.delete_at(redPositions, indexOfSelected)
           else
              redPositions
         end
+      
         Map.put(state, :red, redPositions)
-        Map.put(state, :jump, true)
         true -> state
       end
       end

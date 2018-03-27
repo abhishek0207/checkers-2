@@ -24,7 +24,8 @@ export class MainApp extends React.Component {
             player: this.props.player,
             chatMessages: [],
             chat: false,
-            kingList : []
+            kingList : {},
+            blackKing: {}
           }
         
 }
@@ -86,12 +87,11 @@ componentDidMount() {
     })
 
     this.state.channel.on("moved_black", response => {
-        
             this.setState({blackPositions: response.message.black,
             redPositions: response.message.red,
             allPositions: response.message.all,
         next:"red",
-        kingList: response.message.kings})
+        blackKing: response.message.kings})
     if(response.message.player!= this.state.player)  {
         this.setState({message: response.message.player +" has played, your turn"})
     }
@@ -116,8 +116,15 @@ componentDidMount() {
         }
     })
 
-
+    
     //this.channel.push("show_subscribers").recieve("ok", response => {console.log("hey")})
+}
+
+componentDidUpdate() {
+    if(this.state.redPositions.length == 0) {
+        this.state.channel.push("Redwon", {}).receive("ok", response => {console.log("red Won the game")})
+        .receive("error", response => {console.log("error")} )
+    }
 }
 
 gotView(view) {
@@ -211,7 +218,8 @@ return(
     channel = {this.state.channel}
     player = {this.state.player}
     currentChecker = {this.state.currentChecker}
-    kingList = {this.state.kingList}/>
+    kingList = {this.state.kingList}
+    blackKing = {this.state.blackKing}/>
 </div>
 <div class="col-sm-3">
 <Stuff value = {this.state.message} />
