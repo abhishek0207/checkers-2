@@ -38,10 +38,15 @@ html {
   }
   .checker_cell{
      flex-basis:4rem;
-     height:4rem;
+     height:3.8rem;
      flex-shrink:0;
      color: red;
      background:#F0D2B4 ;
+     border-radius: 10px;
+     border-style: solid;
+     border-color: #3a0a0a;
+     border: 1px;
+     padding-top: 10px;
   }
   .checker_cell.odd:nth-of-type(2n),.checker_cell.even:nth-of-type(2n+1)
   {
@@ -69,9 +74,12 @@ html {
       display:table-cell;
       position:relative;
       box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.24);
+      border: 3px;
+      border-style: solid;
+      border-color: darkorange;
   }
   .highlight{
-      border:3px solid green;
+      border:3px solid rgb(243, 154, 22);
   }
   .chat{
     background: rgba(169, 169, 169, 0.623);
@@ -84,16 +92,21 @@ html {
       bottom: 0;
   }
   #chatArea {
-      background: white;
-      margin:10px;
+      background:#442702;
+      
       height:450px;
+      width:230px;
       overflow-y: auto;
+      background: -o-radial-gradient(0% 100%, ellipse cover, rgba(82, 49, 7, 0.384) 20%,rgba(73, 48, 7, 0.089) 40%), -o-linear-gradient(top,  rgba(102,51,0,.25) 0%,rgba(42,60,87,.4) 100%), -o-linear-gradient(-45deg,  #663300 0%,#442702 100%);
+	  background: -ms-radial-gradient(0% 100%, ellipse cover, rgba(82, 49, 7, 0.384) 20%,rgba(73, 48, 7, 0.089) 40%), -ms-linear-gradient(top,  rgba(102,51,0,.25) 0%,rgba(42,60,87,.4) 100%), -ms-linear-gradient(-45deg,  #663300 0%,#442702 100%);
+	  background: -webkit-radial-gradient(0% 100%, ellipse cover, rgba(82, 49, 7, 0.384) 20%,rgba(73, 48, 7, 0.089) 40%), linear-gradient(to bottom,  rgba(102,51,0,.25) 0%,rgba(42,60,87,.4) 100%), linear-gradient(135deg,  #663300 0%,#442702 100%);
+	 
   }
   .king {
       margin: 0 auto;
       font-weight: bold;
       vertical-align: middle;
-      left: 40%;
+      left: 30%;
       font-size: 20px;
       position: relative;
       color:white;
@@ -101,3 +114,104 @@ html {
   .kingnone {
       display: none
   }
+
+  .join {
+    width:400px;
+	height:400px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin: -150px 0 0 -150px;
+	
+   }
+   .join h1 { color: rgb(226, 206, 206); text-align:center; text-shadow: 0 0 10px rgba(0,0,0,0.3); }
+
+   input { 
+	width: 100%; 
+	margin-bottom: 10px; 
+	background: rgba(0,0,0,0.3);
+	border: none;
+	outline: none;
+	padding: 10px;
+	font-size: 13px;
+	color: #fff;
+	text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+	border: 1px solid rgba(0,0,0,0.3);
+	border-radius: 4px;
+	box-shadow: inset 0 -5px 45px rgba(100,100,100,0.2), 0 1px 1px rgba(255,255,255,0.2);
+	-webkit-transition: box-shadow .5s ease;
+	-moz-transition: box-shadow .5s ease;
+	-o-transition: box-shadow .5s ease;
+	-ms-transition: box-shadow .5s ease;
+	transition: box-shadow .5s ease;
+}
+input:focus { box-shadow: inset 0 -5px 45px rgba(100,100,100,0.4), 0 1px 1px rgba(255,255,255,0.2); }
+
+body { 
+    width: 100%;
+	height:100%;
+	font-family: 'Open Sans', sans-serif;
+	background: #442702;
+    background: -o-radial-gradient(0% 100%, ellipse cover, rgba(175, 109, 21, 0.384) 20%,rgba(73, 48, 7, 0.089) 40%), -o-linear-gradient(top,  rgba(102,51,0,.25) 0%,rgba(42,60,87,.4) 100%), -o-linear-gradient(-45deg,  #663300 0%,#442702 100%);
+	background: -ms-radial-gradient(0% 100%, ellipse cover, rgba(175, 109, 21, 0.384) 20%,rgba(73, 48, 7, 0.089) 40%), -ms-linear-gradient(top,  rgba(102,51,0,.25) 0%,rgba(42,60,87,.4) 100%), -ms-linear-gradient(-45deg,  #663300 0%,#442702 100%);
+	background: -webkit-radial-gradient(0% 100%, ellipse cover, rgba(175, 109, 21, 0.384) 20%,rgba(73, 48, 7, 0.089) 40%), linear-gradient(to bottom,  rgba(102,51,0,.25) 0%,rgba(42,60,87,.4) 100%), linear-gradient(135deg,  #663300 0%,#442702 100%);
+	
+}
+
+img {
+    height: 90px;
+    width: 90px;
+}
+
+
+.list-group-item {
+ background: rgba(73,45,17,1);
+ outline: none;
+	padding: 10px;
+	font-size: 13px;
+	color: #fff;
+	text-shadow: 1px 1px 1px rgba(0,0,0,0);
+}
+
+input{
+    width: 230px;
+}
+
+.welcome {
+    color: rgb(226, 206, 206);
+    font-size: 20px !important;
+    text-shadow: 0 0 10px rgba(0,0,0,0.3); 
+}
+
+h3 {
+    color: rgb(226, 206, 206);
+    font-size: 20px !important;
+    text-shadow: 0 0 10px rgba(0,0,0,0.3); 
+    margin-top: 20px;
+   
+}
+
+.row {
+    margin-left: 30px;
+}
+.redScore {
+    background: red;
+    color:white;
+    padding: 20px;
+    width: 50px;
+    height: 50px;
+
+}
+.blackScore {
+    background: black;
+    color:white;
+    padding: 20px;
+    width: 50px;
+    height: 50px;
+}
+
+.score {
+    background:#F0D2B4;
+    border-radius: 10px;
+    padding:20px;
+}

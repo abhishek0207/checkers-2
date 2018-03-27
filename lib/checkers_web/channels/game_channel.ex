@@ -37,7 +37,7 @@ defmodule CheckersWeb.GameChannel do
                     {val, ""} = Atom.to_string(x)|>Integer.parse 
                         val end)
                 all = state.all
-                curState = %{"player" =>  player, "player1" => player1, "black" => black, "red" => red, "all"=> all, "chat" => state.messages, "message" => "#{player} has Joined, please start the game. you have red checkers"}
+                curState = %{"player" =>  player, "player1" => player1, "black" => black, "red" => red, "all"=> all, "chat" => state.messages, "message" => "#{player} has joined, please start the game. You have red checkers"}
                 curState
             end
           end
@@ -51,6 +51,38 @@ defmodule CheckersWeb.GameChannel do
                                     messages}
               {:reply, {:ok, %{}}, socket}
           end
+          def handle_in("blackWon", payload, socket) do
+            "game:" <> gameName = socket.topic
+            Game.setWinner({:global, gameName}, "black")
+            broadcast! socket, "blackWon", %{message:
+                                  "black has Won the game"}
+            {:reply, {:ok, %{}}, socket}
+        end
+        def handle_in("redWon", payload, socket) do
+            "game:" <> gameName = socket.topic
+            Game.setWinner({:global, gameName}, "red")
+            broadcast! socket, "redwinner", %{message:
+                                  "red has won the game"}
+            {:reply, {:ok, %{}}, socket}
+        end
+        def handle_in("giveUp", payload, socket) do
+            "game:" <> gameName = socket.topic
+            winner = Map.get(payload, "Player")
+            Game.setWinner({:global, gameName}, winner)
+            state = Game.call_demo({:global, gameName})
+            IO.inspect(state)
+            player1 = Player.playerName(state.player1)
+            player2 = Player.playerName(state.player2)
+            if(state.winner == player1) do
+                broadcast! socket, "redWinner", %{winner:
+                                  player1, loser: player2}
+            end
+            if(state.winner == player2) do
+                broadcast! socket, "blackWinner", %{winner:
+                                    player2, loser: player1}
+            end
+            {:reply, {:ok, %{}}, socket}
+        end
           def handle_in("new_game", payload, socket) do
             "game:"<>gameName = socket.topic
             player = Map.get(payload, "playerName")
@@ -89,23 +121,22 @@ defmodule CheckersWeb.GameChannel do
                                     black = Game.converttoIntegerList(state.black)
                                     player1 = Player.playerName(state.player1)
                                     player2 = Player.playerName(state.player2)
-                                    curstate = %{"player" => player , "player1"=> player1, "player2"=>player2, "red" => red, "all" => state.all, "gameStarted" => state.isGameStarted, "black" => black}
+                                    current_state = Game.Rules.show_current_state(state.fsm)
+                                    next = if(current_state == :player1_turn) do
+                                        "red"
+                                    else 
+                                        next = if(current_state == :player2_turn) do
+                                            "black"
+                                        else
+                                            ""
+                                        end
+                                    end
+                                    curstate = %{"player" => player , "player1"=> player1, "player2"=>player2, "red" => red, "all" => state.all, "gameStarted" => state.isGameStarted, "next" => next, "gameEnded" => state.isGameEnded, "black" => black}
                                     broadcast! socket, "new_spectator", %{message:
                                     curstate}
                                     {:reply,  {:ok, curstate}, socket}
                                 end
-                                #IO.puts("Server is already started")
-                                #state = Game.call_demo({:global, gameName})
-                                #IO.inspect(state)
-                                #player = ""
-                                #if(state.player1) do
-                                #    player =Player.playerName(state.player1)
-                                #end
-                                #red = Game.converttoIntegerList(state.red)
-                                #black = Game.converttoIntegerList(state.black)
-                                #IO.inspect(red)
-                                #IO.inspect(black)
-                                #{:reply, {:ok, %{"player" => player , "red" => red, "all" => state.all, "gameStarted" => state.isGameStarted, "black" => black}}, socket}
+                                
                         end
                    
                  end
@@ -154,7 +185,7 @@ defmodule CheckersWeb.GameChannel do
                 end)
                 player2  = Player.playerName(state.player2)
                 #get King Info
-                curState = %{"player"=> curPlayer, "player2" => player2, "red" => red, "all" => state.all, "black" => black, "kings" => state.kingmap}
+                curState = %{"player"=> curPlayer, "player2" => player2, "player1Score" => state.player1Score, "player2Score" => state.player2Score, "red" => red, "all" => state.all, "black" => black, "kings" => state.kingmap}
                   broadcast! socket, "moved_Red", %{message:
                         curState}
                     {:reply,{:ok, curState}, socket}
@@ -185,7 +216,10 @@ defmodule CheckersWeb.GameChannel do
               player1 = Player.playerName(state.player1)
               #king info added
               
-                curState = %{"player" => curPlayer, "player1" => player1, "red" => red, "all" => state.all, "black" => black, "kings" => state.blackKing }
+                curState = %{"player" => curPlayer, "player1" => player1, "player1Score" => state.player1Score, "player2Score" => state.player2Score, "red" => red, "all" => state.all, "black" => black, "kings" => state.blackKing }
+                if(length(red) == 0) do
+                    
+                end
                 broadcast! socket, "moved_black", %{message:
                       curState}
                   {:reply,{:ok, curState}, socket}

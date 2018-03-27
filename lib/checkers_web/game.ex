@@ -10,8 +10,8 @@ defmodule CheckersWeb.Game do
 
     defstruct [
         id: nil,
-        player1Id: nil,
-        player2Id: nil,
+        player1Score: 0,
+        player2Score: 0,
         player1: nil,
         player2: nil,
         player1Joined: nil,
@@ -26,6 +26,7 @@ defmodule CheckersWeb.Game do
         all: nil, 
         fsm: :none,
         isGameStarted: false,
+        isGameEnded: false,
         messages: [],
         jump: false,
         kings: [],
@@ -52,7 +53,7 @@ defmodule CheckersWeb.Game do
         newList = Enum.map(newList, fn x-> Board.getBoardPosition(board, x) end)
         allPos = Board.getAllPositions(board)
         {:ok, fsm} = Rules.start_link(player)
-        {:ok, %__MODULE__{id: gameName, isGameStarted: true, player1: player1, player1Joined: true, player2: player2, red: newList, gameBoard: board, fsm: fsm, all: allPos}}
+        {:ok, %__MODULE__{id: gameName, isGameStarted: true, player1: player1, player1Score: 0, player2Score: 0, player1Joined: true, player2: player2, red: newList, gameBoard: board, fsm: fsm, all: allPos}}
       end
 
     def via_tuple(name), do: {:via, Registry, {Registry.Game, name}}
@@ -76,7 +77,6 @@ defmodule CheckersWeb.Game do
       newList = Enum.map(newList, fn x -> Piece.getPosition(x) end)
       newList = Enum.map(newList, fn x-> Board.getBoardPosition(state.gameBoard, x) end)
       allPos = Board.getAllPositions(state.gameBoard)
-      IO.inspect(newList)
       state = Map.put(state, :black, newList)
       state = Map.put(state, :all, allPos)
       state
@@ -227,7 +227,7 @@ defmodule CheckersWeb.Game do
             Map.merge(x, y, fn _k, v1, v2 -> v2 ++ v1 end)
          end)
         else 
-          newstate.kingmap
+         %{}
         end
         IO.inspect(listMap)
         IO.inspect(kingmap)
@@ -267,12 +267,6 @@ defmodule CheckersWeb.Game do
         allPos = Board.getAllPositions(state.gameBoard)
         newstate = Map.put(newstate, :all, allPos)
 
-        #king logic
-        #blackKing = newstate.blackKing
-        #if(blackKing == nil) do
-         # blackKing = %{}
-         #end
-
          listOfKings = Enum.filter(newstate.black, fn x ->
           #these are the positions on the board
           squarePid = Board.getSquare(state.gameBoard, x)
@@ -296,7 +290,7 @@ defmodule CheckersWeb.Game do
             Map.merge(x, y, fn _k, v1, v2 -> v2 ++ v1 end)
          end)
         else 
-          newstate.blackKing
+         %{}
         end
         IO.inspect(listMap)
         IO.inspect(blackKing)
@@ -332,6 +326,9 @@ defmodule CheckersWeb.Game do
           else
               blackPositions
         end
+        player1Score = Map.get(state, :player1Score)
+        player1Score = player1Score + 5
+        state = Map.put(state, :player1Score, player1Score )
         Map.put(state, :black, blackPositions)
         color == "black" -> 
           IO.puts("entered diagnoal black")
@@ -358,10 +355,44 @@ defmodule CheckersWeb.Game do
           else
              redPositions
         end
-      
+        player2Score = Map.get(state, :player2Score)
+        player2Score = player2Score + 5
+        state = Map.put(state, :player2Score, player2Score )
         Map.put(state, :red, redPositions)
         true -> state
       end
+      end
+      def setWinner(pid, player) do
+        state = call_demo(pid)
+        player1 = Player.playerName(state.player1)
+        player2 = Player.playerName(state.player2)
+        IO.puts(player)
+        IO.puts(player1)
+        IO.puts(player2)
+        if(player == player1) do
+          GenServer.call(pid, {:blackWon, player2})
+        end
+       if(player ==player2) do
+        GenServer.call(pid, {:redWon,  player1})
+       end
+      end
+
+      def handle_call({:redWon, player}, _from, state) do
+        IO.puts("entered red won")
+        newState = Map.put(state, :winner, player)
+        newState = Map.put(newState, :isGameEnded, true)
+        Rules.win(state.fsm)
+        IO.inspect(Rules.show_current_state(state.fsm))
+        {:reply, :ok, newState} 
+      end
+
+      def handle_call({:blackWon, player}, _from, state) do
+        IO.puts("entered black won")
+        newState = Map.put(state, :winner, player)
+        newState = Map.put(newState, :isGameEnded, true)
+        Rules.win(state.fsm)
+        IO.inspect(Rules.show_current_state(state.fsm))
+        {:reply, :ok, newState}
       end
 
       def movePiece(:error, _player, _curPosition, _newPosition, state) do

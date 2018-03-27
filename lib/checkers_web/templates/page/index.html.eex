@@ -22,19 +22,16 @@ function alreadyClicked() {
   return false
 }
 </script>
-<div class="row">
+<div class="join">
+  <div class="col">
+  <img src="/images/images.jpeg"></img>
+  </div>
   <div class="col">
     <h1 id="index-page">Create a New Game</h1>
-    <p>GameName: <input type="text" id="game-input"></p>
-    <p>Name: <input type="text" id="name-input"></p>
-    <p><button id="game-button" onclick="clicked()">Join Game</button></p>
+    <input type="text" id="game-input" placeholder="Enter game Name">
+    <input type="text" id="name-input" placeholder="Enter your name">
+    <p><button id="game-button" onclick="clicked()" class="btn btn-dark btn-block btn-large">Join Game</button></p>
     <p id="game-output"></p>
   </div>
-   <div class="col">
-    <h1 id="index-page">Join an Existing Game</h1>
-    <p>GameName: <input type="text" id="game-input-joined"></p>
-    <p>Name: <input type="text" id="name-input-joined"></p>
-    <p><button id="join-button" onclick="alreadyClicked()">Join Game</button></p>
-    <p id="game-output"></p>
-  </div>
+  
 </div>

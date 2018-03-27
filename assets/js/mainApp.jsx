@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {Board,CheckerRow, CheckerCell, RedCheckers, BlackCheckers, PlayerList, Chat} from './components';
+import {Button} from 'reactstrap'
 
 export class MainApp extends React.Component {
     constructor(props) {
@@ -18,15 +19,23 @@ export class MainApp extends React.Component {
             selectedchecker:0
             },
             next : "",
-            message: "WelCome to Checkers!! Lets wait for the other player to join",
+            message: "Welcome to Checkers!! Lets wait for the other player to join...",
             redPositions: [],
             channel: this.props.channel,
             player: this.props.player,
+            player1: "",
+            player2: "",
             chatMessages: [],
             chat: false,
             kingList : {},
-            blackKing: {}
+            blackKing: {},
+            player1Score: 0,
+            player2Score: 0, 
+            gameEnded: false,
+            winner: "",
+            loser: ""
           }
+          this.giveUp = this.giveUp.bind(this)
         
 }
 
@@ -40,11 +49,13 @@ componentDidMount() {
           console.log(response.message.red)
         this.setState({redPositions: response.message.red,
         allPositions: response.message.all,
+        player1: response.message.player,
         chat: true})
       })
       this.state.channel.on("player2_added", response => {
         console.log(response.message)
         console.log(response.message.black)
+        this.setState({player2: response.message.player, player1: response.message.player1})
       if(response.message.player!= this.state.player) {
       this.setState({blackPositions: response.message.black,
                     redPositions: response.message.red,
@@ -59,7 +70,7 @@ componentDidMount() {
             chatmessages: response.message.chat,
             chat:true,
             spec: false,
-            message: "welcome to checkers " + response.message.player  + ", lets wait for " + response.message.player1 + " to play"})
+            message: "Welcome to checkers " + response.message.player  + ", lets wait for " + response.message.player1 + " to play"})
       }
 
     })
@@ -75,7 +86,9 @@ componentDidMount() {
             redPositions: response.message.red,
             allPositions: response.message.all,
         next:"black",
-        kingList: response.message.kings
+        kingList: response.message.kings,
+        player1Score: response.message.player1Score,
+        player2Score: response.message.player2Score
         })
         
     if(response.message.player!= this.state.player)  {
@@ -84,6 +97,11 @@ componentDidMount() {
     else {
         this.setState({message: response.message.player2 + "'s turn"})
     }
+    if(this.state.blackPositions.length == 0 && this.state.redPositions.length > 0 ) {
+        this.state.channel.push("redWon", {}).receive("ok", response => {alert("red Won the game")})
+        .receive("error", response => {console.log("error")} )
+    }
+    
     })
 
     this.state.channel.on("moved_black", response => {
@@ -91,7 +109,9 @@ componentDidMount() {
             redPositions: response.message.red,
             allPositions: response.message.all,
         next:"red",
-        blackKing: response.message.kings})
+        blackKing: response.message.kings,
+        player1Score: response.message.player1Score,
+        player2Score: response.message.player2Score})
     if(response.message.player!= this.state.player)  {
         this.setState({message: response.message.player +" has played, your turn"})
     }
@@ -103,28 +123,77 @@ componentDidMount() {
     })
 
     this.state.channel.on("new_spectator", response => {
-        this.setState({blackPositions: response.message.black,
-            redPositions: response.message.red,
-            allPositions: response.message.all,
-            chatMessages: []
-        })
-        if(this.state.next =="red") {
-            this.setState({message: response.message.player1 + "'s turn"})
+        if(response.message.gameEnded) {
+            if(response.message.player == this.state.player) {
+                this.setState({message: "game has ended, please join a new one"})
+            }
+            
         }
         else {
-            this.setState({message: response.message.player2 + "'s turn"})
+            this.setState({blackPositions: response.message.black,
+                redPositions: response.message.red,
+                allPositions: response.message.all,
+                player1: response.message.player1,
+                player2: response.message.player2,
+                chatMessages: [],
+                gameEnded: this.state.gameEnded,
+                winner: this.state.winner,
+                loser: this.state.loser,
+                next: response.message.next
+            })
+            if(response.message.next =="red") {
+                this.setState({message: response.message.player1 + "'s turn"})
+            }
+            else {
+                this.setState({message: response.message.player2 + "'s turn"})
+            }
+        }
+        
+    })
+
+    this.state.channel.on("blackWinner", response=> {
+        if(response.winner == this.state.player)  {
+            this.setState({message: response.loser + " has given up! You won :D",
+        gameEnded: true,
+        winner: response.winner,
+        loser:  response.loser} )
+        }
+        else if(response.loser == this.state.player)  {
+            this.setState({message: response.winner + " won!, you lose :(",
+            gameEnded: true,
+            winner: response.winner,
+            loser:  response.loser})
+        }
+        else {
+            
+            this.setState({message: response.winner + " won!, " + response.loser + " lost the game",
+            gameEnded: true,
+            winner: response.winner,
+            loser:  response.loser})
+        }
+
+    })
+    this.state.channel.on("redWinner", response=> {
+        if(response.winner == this.state.player)  {
+            console.log(response.loser)
+            this.setState({message: response.loser + " has given up! you won"})
+        }
+        else if(response.loser == this.state.player)  {
+            console.log("in loser section")
+            console.log(response.loser)
+            this.setState({message: response.winner + " won!, you lose"})
+        }
+        else {
+            
+            this.setState({message: response.winner + " won!, " + response.loser + " lost the game"})
         }
     })
 
-    
     //this.channel.push("show_subscribers").recieve("ok", response => {console.log("hey")})
 }
 
 componentDidUpdate() {
-    if(this.state.redPositions.length == 0) {
-        this.state.channel.push("Redwon", {}).receive("ok", response => {console.log("red Won the game")})
-        .receive("error", response => {console.log("error")} )
-    }
+    
 }
 
 gotView(view) {
@@ -199,6 +268,15 @@ onRedClick(pos, king, next){
     })
 
 }
+giveUp() {
+    if(confirm("are you sure? the other player will win the game")) {
+        this.state.channel.push("giveUp", {Player: this.state.player})
+                    .receive("ok", response => {console.log("Given up")})
+                    .receive("error", response => {alert("not given up")})
+    }
+    
+}
+
 render(){
 let chatList = this.state.chatMessages
 console.log(this.state.chatMessages)
@@ -207,6 +285,9 @@ let liList = chatList.map((x) =>
 let chatEnabled = this.state.chat
 return(
 <div class="someDiv">
+<div class="row">
+<Stuff value = {this.state.message} />
+</div>
 <div class="row">
 <div class="col-sm-6">
 <Board red={this.state.redPositions} 
@@ -222,17 +303,16 @@ return(
     blackKing = {this.state.blackKing}/>
 </div>
 <div class="col-sm-3">
-<Stuff value = {this.state.message} />
+<Score player1 = {this.state.player1} player2= {this.state.player2} red={this.state.player1Score} black = {this.state.player2Score} />
+<Button value = "giveUp"  onClick = {this.giveUp}>Give Up!</Button>
 </div>
 <div class="col-sm-3">
-<div className="chat">
 <h3>Chat</h3>
 <div id="chatArea">
             <ul className="list-group">
                    {liList}
                 </ul>
                 <Chat channel = {this.props.channel} player = {this.state.player} enabled = {this.state.chat} />
-</div>
 </div>
 </div>
 </div>
@@ -246,6 +326,33 @@ function Stuff(props) {
         return(
   <h3> {props.value}</h3>
         )
+}
+
+function Score(props) {
+    
+    return(
+       
+        <div class="score">
+         <center><h6>ScoreBoard</h6></center>
+        <table>
+            <tr>
+                <td class="name">
+                    {props.player1}
+                    </td>
+                    <td>
+        <div class="redScore circle">{props.red}</div> <br /> </td>
+        </tr>
+        <tr>
+        <td class="name">
+                    {props.player2}
+                    </td>
+                    <td>
+        <div class="blackScore circle">{props.black}</div>
+        </td>
+        </tr>
+        </table>
+        </div>
+    )
 }
 
 

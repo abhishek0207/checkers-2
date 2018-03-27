@@ -187,92 +187,89 @@ export class RedCheckers extends React.Component {
         let newPositions = this.state.nextPositions
         let currentPosition =this.state.position;
         let row = this.props.rownumber
-        let newRight = currentPosition + 7
-        let newLeft = currentPosition + 9
-        
+        let newRight = currentPosition + 9
+        let newLeft = currentPosition + 7
+        let currentRow = this.props.rownumber
         let allPositions = this.props.all
-        if(allPositions[newLeft - 1] =="b")
-            {
-                let cuttingMove = newLeft + 9
-                if(allPositions[cuttingMove - 1] == "-")
-                    {
-                        newPositions.push(cuttingMove)
-                        
-                    }
-                
-            }
-           
-            if(allPositions[newRight - 1] =="b")
-            {
-                
-                let cuttingMove = newRight + 7
-                
-                if(allPositions[cuttingMove - 1] == "-")
-                    {
-                       
-                        newPositions.push(cuttingMove)
-                    }
-                
-            }
+        let currentCol = currentPosition % 8
+        let cuttingLeftMove = (currentRow + 1)* 8 + currentCol - 2
+        let cuttingRightMove = (currentRow + 1)* 8 + currentCol + 2 
+      if(allPositions[newLeft-1] == "b" && allPositions[cuttingLeftMove - 1] == "-")  {
+        let newRow = Math.ceil(cuttingLeftMove / 8)
+        if(Math.abs(newRow - currentRow ) == 2){
+        newPositions.push(cuttingLeftMove)
+        }
+    }
+        if(allPositions[newRight-1] == "b" && allPositions[cuttingRightMove - 1] == "-")  {
+            let newRow = Math.ceil(cuttingRightMove / 8)
+            if(Math.abs(newRow - currentRow ) == 2){
+                newPositions.push(cuttingRightMove)
+                } 
+        }
+
 
             if(this.state.king) {
-                let kingLeft = currentPosition - 9
-                let kingRight = currentPosition - 7
-                if(allPositions[kingLeft - 1] =="b")
-                {
-    
-                    let cuttingMove = kingLeft - 9
-                    if(allPositions[cuttingMove - 1] == "-")
-                        {
-                            newPositions.push(cuttingMove)
-                        }
-                    
+                let newLeft = currentPosition - 7
+                let newRight = currentPosition - 9
+                let currentCol = currentPosition % 8
+                let cuttingLeftMove = (currentRow - 3)* 8 + currentCol -2
+                let cuttingRightMove = (currentRow - 3)* 8 + currentCol + 2 
+              if(allPositions[newRight-1] == "b" && allPositions[cuttingLeftMove - 1] == "-")  {
+                  console.log("entered in left ")
+                let newRow = Math.ceil(cuttingLeftMove / 8)
+                if(Math.abs(newRow - currentRow ) == 2){
+                newPositions.push(cuttingLeftMove)
                 }
-
-                if(allPositions[kingRight - 1] =="b")
-                {
-    
-                    let cuttingMove = kingRight - 7
-                    if(allPositions[cuttingMove - 1] == "-")
-                        {
-                            newPositions.push(cuttingMove)
-                        }
-                    
+            }
+                if(allPositions[newLeft-1] == "b" && allPositions[cuttingRightMove - 1] == "-")  {
+                    console.log("Entered in right")
+                    let newRow = Math.ceil(cuttingRightMove / 8)
+        
+                    if(Math.abs(newRow - currentRow ) == 2){
+                        newPositions.push(cuttingRightMove)
+                        } 
                 }
                 
             }
 
+            let leftRow = Math.ceil(newLeft / 8)
+            let rightRow = Math.ceil(newRight / 8)
+
+            console.log(allPositions[newLeft - 1])
+            if(leftRow - currentRow == 1 && allPositions[newLeft - 1] == "-")
+            {
+              newPositions.push(newLeft)
+            }
+            console.log(allPositions[newRight - 1])
+            if(rightRow - currentRow == 1 && allPositions[newRight - 1] == "-" )
+            {
+              newPositions.push(newRight)
+            }
+            
            
-           
-        redmethod(this.state.position, this.state.king, this.state.nextPositions)
+        redmethod(this.state.position, this.state.king, newPositions)
     }
 
     componentDidMount(){
-       let kingflag = false
-       console.log("earlier state is")
-       console.log(this.state.king)
+      let kingflag = false
+      let allPositions = this.props.all
       let currentPosition = this.state.position
       let newLeft = currentPosition + 7
       let newRight = currentPosition + 9
       let currentRow = this.props.rownumber
-      let leftRow = Math.ceil(newLeft / 8)
-      let rightRow = Math.ceil(newRight / 8)
-      let newPositions = []
-      if(leftRow - currentRow == 1)
-      {
-        newPositions.push(newLeft)
+      let currentCol = currentPosition % 8
+      if(currentCol == 0) {
+          currentCol = 8
       }
-      if(rightRow - currentRow == 1)
-      {
-        newPositions.push(newRight)
-      }
+
+     let newPositions = []
         if(this.state.king) {
             let kingLeftRow = Math.ceil((currentPosition - 7) / 8)
             let kingRightRow = Math.ceil((currentPosition - 9) / 8)
-            if (currentRow - kingLeftRow == 1) {
+            if (currentRow - kingLeftRow == 1 && allPositions[currentPosition - 7 - 1] == "-") {
                 newPositions.push(currentPosition - 7)
             }
-            if (currentRow - kingRightRow == 1) {
+            if (currentRow - kingRightRow == 1 && allPositions[currentPosition - 9 - 1] == "-") {
                 newPositions.push(currentPosition - 9)
             }      
         }
@@ -314,25 +311,15 @@ export class BlackCheckers extends React.Component {
         if(this.state.king) {
             let kingLeftRow = Math.ceil((currentPosition + 7) / 8)
             let kingRightRow = Math.ceil((currentPosition + 9) / 8)
-            if (kingLeftRow - currentRow  == 1) {
+            if (kingLeftRow - currentRow  == 1 && allPositions[currentPosition + 7 - 1] == "-") {
                 newPositions.push(currentPosition + 7)
             }
-            if (kingRightRow - currentRow == 1) {
+            if (kingRightRow - currentRow == 1 && allPositions[currentPosition + 9 - 1] == "-") {
                 newPositions.push(currentPosition + 9)
             }      
         }
         let leftRow = Math.ceil(newLeft / 8)
-        let rightRow = Math.ceil(newRight / 8)
-       
-      if(currentRow - leftRow == 1)
-      {
-        newPositions.push(newLeft)
-      }
-      if(currentRow - rightRow == 1)
-      {
-        newPositions.push(newRight)
-      }
-                
+        let rightRow = Math.ceil(newRight / 8)  
         this.setState({nextPositions: newPositions})
     }
     handleClick() {
@@ -340,59 +327,62 @@ export class BlackCheckers extends React.Component {
         let allPositions = this.props.all
         let newPositions = this.state.nextPositions
         let currentPosition =this.state.position;
-        let currentRow = this.state.position 
-        let newRight = currentPosition - 7
-        let newLeft = currentPosition - 9
-        if(allPositions[newLeft - 1] =="r")
-            {
+        let currentRow = this.props.rownumber
+        let newLeft = currentPosition - 7
+        let newRight = currentPosition - 9
+        let currentCol = currentPosition % 8
+        let cuttingLeftMove = (currentRow - 3)* 8 + currentCol -2
+        let cuttingRightMove = (currentRow - 3)* 8 + currentCol + 2 
+      if(allPositions[newRight-1] == "r" && allPositions[cuttingLeftMove - 1] == "-")  {
+        let newRow = Math.ceil(cuttingLeftMove / 8)
+        if(Math.abs(newRow - currentRow ) == 2){
+        newPositions.push(cuttingLeftMove)
+        }
+    }
+        if(allPositions[newLeft-1] == "r" && allPositions[cuttingRightMove - 1] == "-")  {
+            let newRow = Math.ceil(cuttingRightMove / 8)
 
-                let cuttingMove = newLeft - 9
-                if(allPositions[cuttingMove - 1] == "-")
-                    {
-                        newPositions.push(cuttingMove)
-                    }
-                
-            }
-           
-            if(allPositions[newRight - 1] =="r")
-            {
-                let cuttingMove = newRight - 7
-                
-                if(allPositions[cuttingMove - 1] == "-")
-                    {
-                       
-                        newPositions.push(cuttingMove)
-                    }
-                
-            }
+            if(Math.abs(newRow - currentRow ) == 2){
+                newPositions.push(cuttingRightMove)
+                } 
+        }
 
             if(this.state.king) {
-                let kingLeft = currentPosition + 9
-                let kingRight = currentPosition + 7
-                if(allPositions[kingLeft - 1] =="r")
-                {
-    
-                    let cuttingMove = kingLeft + 9
-                    if(allPositions[cuttingMove - 1] == "-")
-                        {
-                            newPositions.push(cuttingMove)
-                        }
-                    
-                }
-
-                if(allPositions[kingRight - 1] =="r")
-                {
-    
-                    let cuttingMove = kingRight + 7
-                    if(allPositions[cuttingMove - 1] == "-")
-                        {
-                            newPositions.push(cuttingMove)
-                        }
-                    
-                }
+                let newRight = currentPosition + 9
+        let newLeft = currentPosition + 7
+        let currentRow = this.props.rownumber
+        let allPositions = this.props.all
+                let currentCol = currentPosition % 8
+      let cuttingLeftMove = (currentRow + 1)* 8 + currentCol - 2
+      let cuttingRightMove = (currentRow + 1)* 8 + currentCol + 2 
+      
+      if(allPositions[newLeft-1] == "r" && allPositions[cuttingLeftMove - 1] == "-")  {
+         
+        let newRow = Math.ceil(cuttingLeftMove / 8)
+        if(Math.abs(newRow - currentRow ) == 2){
+        newPositions.push(cuttingLeftMove)
+        }
+    }
+        if(allPositions[newRight-1] == "r" && allPositions[cuttingRightMove - 1] == "-")  {
+           
+            let newRow = Math.ceil(cuttingRightMove / 8)
+            if(Math.abs(newRow - currentRow ) == 2){
+                newPositions.push(cuttingRightMove)
+                } 
+        }
                 
             }
-
+        let leftRow = Math.ceil(newLeft / 8)
+        let rightRow = Math.ceil(newRight / 8)
+       
+      if(currentRow - leftRow == 1 && allPositions[newLeft - 1] == "-")
+      {
+        newPositions.push(newLeft)
+      }
+      if(currentRow - rightRow == 1 && allPositions[newRight - 1]=="-")
+      {
+        newPositions.push(newRight)
+      }
            
         blackmethod(this.state.position, this.state.king, newPositions)
     }
@@ -429,16 +419,16 @@ export class Chat extends React.Component {
     }
     render(){
         let chatCols =  <div id="chatBox">
-        <form className="input" onSubmit={(e) => this.submitMessage(e)}>
+        <form  onSubmit={(e) => this.submitMessage(e)}>
         <input type="text"  ref="msg"/>
-        <input type="submit"  value="Send"/>
+       
     </form>
     </div>
        if(this.props.enabled == false) {
         chatCols =  <div id="chatBox">
         <form className="input">
         <input type="text"  ref="msg" placeholder = "only players can chat" disabled/>
-        <input type="submit"  value="Send" disabled/>
+       
     </form>
     </div>
        }
