@@ -420,7 +420,7 @@ export class Chat extends React.Component {
     render(){
         let chatCols =  <div id="chatBox">
         <form  onSubmit={(e) => this.submitMessage(e)}>
-        <input type="text"  ref="msg"/>
+        <input type="text"  ref="msg" placeholder = "Say Hi!"/>
        
     </form>
     </div>

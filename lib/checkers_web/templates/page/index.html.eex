@@ -30,7 +30,7 @@ function alreadyClicked() {
     <h1 id="index-page">Create a New Game</h1>
     <input type="text" id="game-input" placeholder="Enter game Name">
     <input type="text" id="name-input" placeholder="Enter your name">
-    <p><button id="game-button" onclick="clicked()" class="btn btn-dark btn-block btn-large">Join Game</button></p>
+    <p><button id="game-button" onclick="clicked()" class="btn btn-dark btn-block">Join Game</button></p>
     <p id="game-output"></p>
   </div>
   

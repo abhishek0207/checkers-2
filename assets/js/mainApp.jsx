@@ -304,6 +304,8 @@ return(
 </div>
 <div class="col-sm-3">
 <Score player1 = {this.state.player1} player2= {this.state.player2} red={this.state.player1Score} black = {this.state.player2Score} />
+<br/>
+<br/>
 <Button value = "giveUp"  onClick = {this.giveUp}>Give Up!</Button>
 </div>
 <div class="col-sm-3">
@@ -334,20 +336,20 @@ function Score(props) {
        
         <div class="score">
          <center><h6>ScoreBoard</h6></center>
-        <table>
-            <tr>
-                <td class="name">
+        <table width="100%">
+            <tr width="100%">
+                <td class="name" width="50%">
                     {props.player1}
                     </td>
-                    <td>
-        <div class="redScore circle">{props.red}</div> <br /> </td>
+                    <td width="50%">
+        <div class="redScore circlescore">{props.red}</div> <br /> </td>
         </tr>
-        <tr>
-        <td class="name">
+        <tr width="100%">
+        <td class="name" width="50%">
                     {props.player2}
                     </td>
-                    <td>
-        <div class="blackScore circle">{props.black}</div>
+                    <td width="50%">
+        <div class="blackScore circlescore">{props.black}</div>
         </td>
         </tr>
         </table>
